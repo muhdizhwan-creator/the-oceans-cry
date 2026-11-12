@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Ocean’s Cry – Page 4: The Truth Beneath the Waves</title>
+<style>
+:root{--ink:#0b2e4a;--card:#fff;--card2:#fff6d6;--accent:#ff7a59;--good:#1c9a5b;--bad:#d64545;--page:#e9f8ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6f6ff;--card:#12405f;--card2:#1b5a7a;--page:#06223a}}
+:root[data-theme="dark"]{--ink:#e6f6ff;--card:#12405f;--card2:#1b5a7a;--page:#06223a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"Baloo 2","Trebuchet MS","Comic Sans MS",system-ui,sans-serif;font-size:22px;line-height:1.4}
+main{max-width:1000px;margin:0 auto;padding:16px}
+header{text-align:center;margin-bottom:10px}
+.kicker{font-size:18px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+h1{margin:2px 0;font-size:clamp(28px,5vw,44px)}
+.scene{border-radius:28px;overflow:hidden;box-shadow:0 8px 24px #0a4a7a55;background:#0a6fa8}
+.scene > svg{display:block;width:100%;height:auto}
+.bob{animation:bob 4s ease-in-out infinite}.bob2{animation:bob 5s ease-in-out -2s infinite}.bob3{animation:bob 3s ease-in-out -1s infinite}
+@keyframes bob{50%{transform:translateY(-12px)}}
+.rise{animation:rise 8s linear infinite;opacity:.7}
+@keyframes rise{from{transform:translateY(0)}to{transform:translateY(-420px)}}
+.drift{animation:drift 14s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateX(60px) rotate(8deg)}}
+h2{font-size:30px;margin:26px 0 10px}
+.talk{background:var(--card);border-radius:24px;padding:16px;box-shadow:0 4px 14px #0a4a7a33}
+.line{display:flex;gap:14px;align-items:center;margin:10px 0;animation:pop .4s}
+.line.right{flex-direction:row-reverse}
+@keyframes pop{from{opacity:0;transform:scale(.9)}}
+.av{flex:0 0 96px;height:80px;border-radius:50%;background:#bfeaff;display:flex;align-items:center;justify-content:center;border:4px solid #4cc3e8}
+.av svg{width:80px;height:60px}
+.bub{background:var(--card2);border-radius:22px;padding:12px 18px;flex:1}
+.bub b{display:block;font-size:19px;color:var(--accent)}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px 28px;min-height:56px;font-weight:700;margin:8px 8px 0 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.fact{min-height:220px;border:0;border-radius:24px;padding:18px;text-align:center;color:var(--ink);background:var(--card);box-shadow:0 5px 14px #0a4a7a44;transition:transform .2s,background .3s;font-size:22px}
+.fact:active{transform:scale(.97)}
+.fact .big{font-size:56px;display:block}
+.fact.open{background:var(--card2);border:4px solid #ffc531}
+.fact small{display:block;margin-top:8px;opacity:.75;font-size:17px}
+.progress{font-weight:700;margin-top:10px}
+.quiz{background:var(--card);border-radius:24px;padding:18px;box-shadow:0 4px 14px #0a4a7a33}
+.opt{display:block;width:100%;text-align:left;margin:10px 0;padding:14px 18px;min-height:60px;border-radius:18px;border:3px solid #4cc3e8;background:var(--card2);color:var(--ink);font-size:22px}
+.opt.right{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+#fb{min-height:60px;font-weight:700;margin-top:6px}
+footer{text-align:center;opacity:.75;font-size:16px;margin:24px 0 8px}
+.intro{background:var(--card2);border-left:8px solid var(--accent);border-radius:16px;padding:14px 18px;margin:0 0 16px}
+.tg{display:block;width:100%;background:none;border:0;color:inherit;text-align:center;font-size:22px;padding:0;min-height:150px}
+.src{display:inline-block;margin-top:10px;padding:10px 18px;min-height:44px;border-radius:999px;background:#0a6fa8;color:#fff;font-size:18px;font-weight:700;text-decoration:none}
+.note{font-size:18px;opacity:.85;margin:10px 0}
+#closing{display:none;margin-top:16px}#closing.show{display:block;animation:pop .5s}
+#pg5{margin-left:auto;display:block;margin-right:0}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="kicker">The Ocean’s Cry: A Journey to Save Blue Bay</div>
+<h1>Page 4 – The Truth Beneath the Waves</h1>
+</header>
+<p class="intro">🫧 Bubbles is still shaken after being trapped in a plastic bag. Wise old Oliver gathers the little ones to explain the truth about where all this plastic comes from.</p>
+
+<div class="scene" id="scene"></div>
+
+<h2>🐢 Oliver Explains</h2>
+<div class="talk"><div id="chat"></div><button class="btn" id="next">Next ▶</button><button class="btn" id="replay" hidden>↺ Replay</button></div>
+
+<h2>🔍 Tap a card to discover a fact</h2>
+<div class="cards" id="cards"></div>
+<div class="progress" id="prog">Facts discovered: 0 / 3</div>
+
+<h2>⭐ Quick Quiz</h2>
+<div class="quiz">
+<p><b>At least how much of the waste in our oceans is plastic?</b></p>
+<div id="opts"></div>
+<button class="btn" id="skipQuiz" type="button">Skip Quiz & Continue →</button>
+<div id="fb" aria-live="polite"></div>
+</div>
+<div id="hint" class="note">⭐ Answer the quiz correctly to hear Oliver’s closing words.</div>
+<section id="closing" class="talk" aria-live="polite">
+<div class="line right"><div class="av" id="cav"></div><div class="bub"><b>Oliver</b>Now that we understand the problem, let’s discover how humans and technology can help protect Blue Bay!</div></div>
+<button class="btn" type="button" onclick="window.parent.location.hash='page-3'">
+  ← Back to Page 3
+</button>
+
+<button class="btn" id="pg5" type="button">
+  Next Page: Page 5 →
+</button>
+
+</section>
+<footer>Sources: UNEP · UNEP (2021) · NOAA · Tap a card’s Source button to read more</footer>
+</main>
+
+<script>
+function turtle(shell,skin,w,old){return `<svg viewBox="0 0 130 90" width="${w}" height="${w*90/130}">
+<ellipse cx="30" cy="68" rx="16" ry="8" fill="${skin}" transform="rotate(25 30 68)"/><ellipse cx="85" cy="72" rx="16" ry="8" fill="${skin}" transform="rotate(-20 85 72)"/>
+<ellipse cx="38" cy="26" rx="14" ry="7" fill="${skin}" transform="rotate(-30 38 26)"/><ellipse cx="82" cy="24" rx="15" ry="7" fill="${skin}" transform="rotate(25 82 24)"/>
+<ellipse cx="60" cy="46" rx="42" ry="30" fill="${shell}"/>
+<path d="M60 20v52M32 32l28 14 28-14M32 62l28-16 28 16" stroke="#0004" stroke-width="3" fill="none"/>
+<circle cx="60" cy="46" r="10" fill="#fff3"/>
+<circle cx="108" cy="42" r="15" fill="${skin}"/><circle cx="113" cy="38" r="4.5" fill="#fff"/><circle cx="114" cy="38" r="2.4" fill="#111"/>
+<path d="M105 49q6 5 12 0" stroke="#111" stroke-width="2" fill="none"/>
+${old?'<path d="M104 31q8-6 16 0" stroke="#fff" stroke-width="4" fill="none"/><path d="M108 56q3 12 0 14" stroke="#fff" stroke-width="3" fill="none"/>':'<circle cx="104" cy="49" r="3" fill="#ff9aa8" opacity=".8"/>'}
+</svg>`}
+function fish(w){return `<svg viewBox="0 0 100 60" width="${w}" height="${w*60/100}"><polygon points="8,30 28,12 28,48" fill="#ff9d2e"/><ellipse cx="55" cy="30" rx="36" ry="22" fill="#ffb84d"/><path d="M45 9q10-8 22 0z" fill="#ff9d2e"/><path d="M50 16v28M64 14v32" stroke="#fff" stroke-width="5" opacity=".8"/><circle cx="76" cy="25" r="6" fill="#fff"/><circle cx="78" cy="25" r="3" fill="#111"/><path d="M80 38q5 3 9 0" stroke="#111" stroke-width="2" fill="none"/></svg>`}
+const B=turtle('#4fc26b','#8be09a',110,false),O=turtle('#8a5a2b','#b9a56a',110,true),F=fish(100);
+
+document.getElementById('scene').innerHTML=`<svg viewBox="0 0 800 440" role="img" aria-label="Underwater scene with Bubbles, Finn and Oliver near a floating plastic bag">
+<defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd6ff"/><stop offset=".6" stop-color="#1d8fd1"/><stop offset="1" stop-color="#0b4f93"/></linearGradient></defs>
+<rect width="800" height="440" fill="url(#w)"/>
+<g fill="#fff" opacity=".13"><polygon points="120,0 190,0 330,440 180,440"/><polygon points="420,0 480,0 640,440 500,440"/><polygon points="640,0 690,0 800,300 800,440"/></g>
+<path d="M0 380q120-30 260 0t300 0 240-10v70H0z" fill="#f3d79a"/>
+<g><path d="M60 390v-90M60 340l-25-30M60 325l25-40" stroke="#ff5f8f" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M700 395v-110M700 340l-30-35M700 320l30-45" stroke="#ff9a3c" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M770 400q-6-60 0-120M745 400q-4-40 4-80" stroke="#2fbf71" stroke-width="12" stroke-linecap="round" fill="none"/></g>
+<circle cx="360" cy="388" r="22" fill="#ff8fb3"/><circle cx="395" cy="394" r="14" fill="#c98cff"/>
+<g class="drift"><path d="M520 130q-30 30-15 70h60q15-40-15-70q-15-12-30 0z" fill="#fff" opacity=".75"/><path d="M535 130q-8-30 12-35" stroke="#fff" stroke-width="4" fill="none" opacity=".8"/></g>
+<g class="rise"><circle cx="250" cy="430" r="8" fill="#fff"/><circle cx="450" cy="440" r="12" fill="#fff"/></g><g class="rise" style="animation-delay:-4s"><circle cx="600" cy="430" r="9" fill="#fff"/><circle cx="130" cy="440" r="11" fill="#fff"/></g>
+<g class="bob2"><g transform="translate(40 190)">${O.replace('width="110"','width="230"')}</g></g>
+<g class="bob"><g transform="translate(300 260)">${B.replace('width="110"','width="150"')}</g></g>
+<g class="bob3"><g transform="translate(520 280) scale(-1 1) translate(-110 0)">${F.replace('width="100"','width="110"')}</g></g>
+<!-- Extra underwater decorations -->
+<g opacity=".9">
+  <path d="M150 390 Q130 340 155 315 M155 390 Q180 345 170 320"
+        stroke="#ff75a8" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <path d="M650 390 Q625 340 645 310 M650 390 Q680 350 675 320"
+        stroke="#ffb347" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <circle cx="220" cy="120" r="8" fill="#fff" opacity=".7"/>
+  <circle cx="245" cy="85" r="5" fill="#fff" opacity=".7"/>
+  <circle cx="720" cy="150" r="10" fill="#fff" opacity=".7"/>
+  <circle cx="745" cy="110" r="5" fill="#fff" opacity=".7"/>
+  <circle cx="420" cy="180" r="6" fill="#fff" opacity=".6"/>
+</g>
+<g font-family="sans-serif" font-size="20" font-weight="700" fill="#fff"><text x="105" y="170">Oliver</text><text x="345" y="250">Bubbles</text><text x="528" y="275">Finn</text></g>
+</svg>`;
+
+// Dialogue
+const script=[['Bubbles','l','Oliver, why is there a plastic bag floating by my favourite coral?'],
+['Oliver','r','Every year, millions of tonnes of plastic leak into our oceans, little one. Tap the fact cards below to learn more!'],
+['Finn','l','Whoa! Is all the rubbish in the sea plastic?'],
+['Oliver','r','Most of it! Plastic breaks into tiny pieces called microplastics, and sea animals can mistake them for food.'],
+['Bubbles','l','That’s scary! How can we help Blue Bay?'],
+['Oliver','r','By learning, sharing and using less plastic. First, let’s test what you’ve learned!']];
+const av={Bubbles:B.replace('width="110"','width="80"'),Oliver:O.replace('width="110"','width="80"'),Finn:F.replace('width="100"','width="80"')};
+let step=0;const chat=document.getElementById('chat'),next=document.getElementById('next'),rep=document.getElementById('replay');
+function show(){const [n,s,t]=script[step++];const d=document.createElement('div');d.className='line '+(n==='Oliver'?'right':'');
+d.innerHTML=`<div class="av">${av[n]}</div><div class="bub"><b>${n}</b>${t}</div>`;chat.appendChild(d);
+if(step>=script.length){next.hidden=true;rep.hidden=false}}
+next.onclick=show;rep.onclick=()=>{chat.innerHTML='';step=0;next.hidden=false;rep.hidden=true;show()};show();
+
+// Fact cards
+const facts=[['🌊','19–23 million tonnes','Around 19–23 million tonnes of plastic waste leak into aquatic ecosystems every year.','UNEP','https://www.unep.org/topics/ocean-seas-and-coasts/ecosystem-degradation-pollution/plastic-pollution-and-marine-litter','UNEP – Plastic Pollution and Marine Litter'],
+['🗑️','At least 85%','Plastic accounts for at least 85% of the waste found in our oceans.','UNEP, 2021','https://www.unep.org/en/publications/report/pollution-solution-global-assessment-marine-litter-and-plastic-pollution','UNEP (2021) – From Pollution to Solution: A Global Assessment of Marine Litter and Plastic Pollution'],
+['🔬','Microplastics','Microplastics are tiny plastic particles that are smaller than 5 mm.','NOAA','https://oceanservice.noaa.gov/facts/microplastics.html','NOAA – What are microplastics?']];
+const seen=new Set(),cards=document.getElementById('cards');
+facts.forEach((f,i)=>{const c=document.createElement('div');c.className='fact';
+const b=document.createElement('button');b.className='tg';b.type='button';b.setAttribute('aria-expanded','false');
+const front=`<span class="big">${f[0]}</span><b>Fact ${i+1}</b><small>Tap to reveal</small>`;b.innerHTML=front;
+b.onclick=()=>{const o=c.classList.toggle('open');b.setAttribute('aria-expanded',o);
+b.innerHTML=o?`<span class="big">${f[0]}</span><b>${f[1]}</b><br>${f[2]}`:front;
+seen.add(i);document.getElementById('prog').textContent=seen.size===3?'🎉 All 3 facts discovered! Now try the quiz.':`Facts discovered: ${seen.size} / 3`};
+const a=document.createElement('a');a.className='src';a.href=f[4];a.target='_blank';a.rel='noopener noreferrer';a.textContent='Source: '+f[3]+' ↗';a.setAttribute('aria-label','Open source in a new tab: '+f[5]);
+c.append(b,a);cards.appendChild(c)});
+
+// Quiz
+const opts=[['About 15%',0,'Not quite. The real share is much higher than that. Check Fact 2 and try again!'],['About 50%',0,'Close, but it’s even more than half. Peek at Fact 2 and try again!'],['At least 85%',1,'Correct! 🎉 Plastic makes up at least 85% of marine waste (UNEP, 2021). Great job, ocean helper!']];
+const qo=document.getElementById('opts'),fb=document.getElementById('fb');
+opts.forEach(o=>{const b=document.createElement('button');b.className='opt';b.textContent=o[0];
+b.onclick=()=>{if(qo.dataset.done)return;b.classList.add(o[1]?'right':'wrong');fb.textContent=o[2];fb.style.color=o[1]?'var(--good)':'var(--bad)';
+if(o[1]){qo.dataset.done=1;showClosing()}else setTimeout(()=>b.classList.remove('wrong'),1500)};qo.appendChild(b)});
+function showClosing(){
+  const c=document.getElementById('closing');
+  c.classList.add('show');
+  document.getElementById('hint').hidden=true;
+}
+document.getElementById('cav').innerHTML=av.Oliver;
+document.getElementById('skipQuiz').addEventListener('click', function(){
+  showClosing();
+});
+document.getElementById('pg5').onclick=()=>{window.parent.location.hash='page-5'};
+</script>
+</body>
+</html>

@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Ocean’s Cry – Interactive Digital Storybook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --card:#fff8e8; --ink:#1d3a5c; --muted:#4d6a8a; --edge:#f0d9a6;
+  --coral:#ff6f61; --coral-dark:#d94b3f; --sun:#ffc94a; --sea:#0e8fb8;
+  --pop-bg:#fffdf6;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  scroll-padding-top:env(safe-area-inset-top,0px);
+  background:linear-gradient(180deg,#0a4c8c 0%,#0f7bb5 40%,#25b5cf 75%,#7fdfe0 100%) fixed;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--card:#15304f;--ink:#eaf6ff;--muted:#a9c8e4;--edge:#2f567f;--pop-bg:#173558;color-scheme:dark}
+}
+:root[data-theme="dark"]{--card:#15304f;--ink:#eaf6ff;--muted:#a9c8e4;--edge:#2f567f;--pop-bg:#173558;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Nunito",system-ui,sans-serif;color:var(--ink);background:transparent;overflow-x:hidden;min-height:100vh}
+h1,h2,h3,.fred{font-family:"Fredoka","Nunito",system-ui,sans-serif;font-weight:600}
+
+/* Background layers */
+.rays{position:fixed;inset:-20% -10% 30% -10%;pointer-events:none;z-index:0;opacity:.16;
+  background:repeating-linear-gradient(105deg,transparent 0 60px,#fff 60px 110px,transparent 110px 200px);
+  filter:blur(14px);animation:rays 14s ease-in-out infinite alternate}
+@keyframes rays{from{transform:translateX(-3%) skewX(-3deg)}to{transform:translateX(3%) skewX(3deg)}}
+.seabed{position:fixed;left:0;right:0;bottom:0;height:max(150px,26vh);width:100%;z-index:0;pointer-events:none}
+.sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 4s ease-in-out infinite alternate}
+.sway.b{animation-duration:5.2s;animation-delay:-1.5s}
+@keyframes sway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+#bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bub{position:absolute;bottom:-40px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.9),rgba(255,255,255,.25) 45%,rgba(255,255,255,.08));
+  border:1.5px solid rgba(255,255,255,.55);animation:rise linear infinite}
+@keyframes rise{0%{transform:translate(0,0)}50%{transform:translate(18px,-55vh)}100%{transform:translate(-8px,-115vh)}}
+
+/* Layout */
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:18px 18px 150px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#fff;margin-bottom:18px;text-shadow:0 2px 6px rgba(0,40,90,.35)}
+header .book{font-size:1.05rem;margin:0}
+header .pg{background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.5);border-radius:999px;padding:4px 16px;font-family:"Fredoka",sans-serif;font-size:1rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.card{background:var(--card);border:3px solid var(--edge);border-radius:28px;padding:26px 28px 24px;box-shadow:0 10px 0 rgba(0,50,90,.18),0 18px 40px rgba(0,30,70,.3);
+  animation:enter .8s cubic-bezier(.2,.8,.2,1) both}
+@keyframes enter{from{opacity:0;transform:translateY(24px) rotate(-1deg)}to{opacity:1;transform:none}}
+.card h2{font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.1;margin:0 0 14px;color:var(--sea)}
+.card p{font-size:clamp(1.08rem,2.2vw,1.22rem);line-height:1.75;margin:0 0 14px;max-width:60ch}
+.story p:first-of-type::first-letter{font-family:"Fredoka",sans-serif;font-size:2.4em;line-height:.8;float:left;padding:6px 8px 0 0;color:var(--coral)}
+.hint{font-size:1rem;color:var(--muted);margin:6px 0 0;font-weight:700;min-height:1.5em}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.btn{font-family:"Fredoka",sans-serif;font-size:1.15rem;border:0;border-radius:999px;padding:13px 26px;cursor:pointer;min-height:48px;
+  transition:transform .15s,box-shadow .15s;box-shadow:0 5px 0 rgba(0,0,0,.2)}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
+.btn.primary{background:var(--coral);color:#fff;box-shadow:0 5px 0 var(--coral-dark)}
+.btn.secondary{background:var(--sun);color:#4a3200;box-shadow:0 5px 0 #d79e1d}
+:focus-visible{outline:4px solid #fff;outline-offset:3px;box-shadow:0 0 0 7px var(--sea)}
+
+/* Stage with characters */
+.stage{position:relative;height:clamp(330px,46vh,430px)}
+.char{position:absolute;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.char .inner{display:block;animation:bob 3.6s ease-in-out infinite}
+.char svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 8px 8px rgba(0,40,80,.3))}
+.turtle{left:0;bottom:0;width:64%}
+.fish{right:2%;top:36%;width:34%}
+.fish .inner{animation-duration:2.8s;animation-delay:-1s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.name{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);background:#fff;color:var(--ink);font-family:"Fredoka",sans-serif;
+  padding:2px 14px;border-radius:999px;font-size:.95rem;box-shadow:0 3px 0 rgba(0,0,0,.15);white-space:nowrap}
+.char.hinting::before{content:"";position:absolute;inset:8% 4%;border-radius:50%;border:4px solid rgba(255,255,255,.8);animation:ring 1.8s ease-out infinite}
+@keyframes ring{from{transform:scale(.8);opacity:1}to{transform:scale(1.15);opacity:0}}
+.turtle.pop .inner{animation:popT .8s ease}
+.fish.pop .inner{animation:popF .7s ease}
+@keyframes popT{0%{transform:scale(1)}25%{transform:scale(1.14) rotate(-7deg)}55%{transform:scale(.96) rotate(5deg)}100%{transform:scale(1)}}
+@keyframes popF{0%{transform:translateX(0) rotate(0)}30%{transform:translateX(-26px) rotate(-14deg) scale(1.1)}60%{transform:translateX(10px) rotate(8deg)}100%{transform:none}}
+.flip{animation:flip .55s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:100% 20%}
+@keyframes flip{from{transform:rotate(-14deg)}to{transform:rotate(12deg)}}
+.tail{animation:tail 1s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:100% 50%}
+@keyframes tail{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+
+.speech{position:absolute;top:0;max-width:78%;background:#fff;color:#1d3a5c;border:3px solid #bfe6f5;border-radius:22px;padding:14px 18px;
+  font-size:clamp(1rem,2.1vw,1.15rem);line-height:1.5;font-weight:700;box-shadow:0 6px 0 rgba(0,60,110,.18);
+  opacity:0;transform:scale(.7) translateY(14px);pointer-events:none;transition:opacity .3s,transform .35s cubic-bezier(.3,1.5,.5,1);z-index:3}
+.speech.show{opacity:1;transform:none}
+.speech b{display:block;font-family:"Fredoka",sans-serif;color:var(--coral-dark);font-size:1.05rem;margin-bottom:2px}
+.speech::after{content:"";position:absolute;bottom:-17px;width:26px;height:26px;background:#fff;border-right:3px solid #bfe6f5;border-bottom:3px solid #bfe6f5;transform:rotate(45deg) skew(8deg,8deg)}
+#sp-bubbles{left:0}#sp-bubbles::after{left:26%}
+#sp-finn{right:0}#sp-finn::after{right:22%}
+.spark{position:fixed;z-index:20;pointer-events:none;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff,rgba(190,235,255,.6));
+  border:1.5px solid rgba(255,255,255,.9);animation:spark .9s ease-out forwards}
+@keyframes spark{to{transform:translate(var(--dx),var(--dy)) scale(.3);opacity:0}}
+
+/* Background sea animals (scenery only) */
+.critters{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.mf{position:absolute;left:0;width:34px;height:20px;animation:swim linear infinite;will-change:transform}
+.mf.l{animation-name:swimL}
+.mf svg{display:block;width:100%;height:100%}
+@keyframes swim{from{transform:translateX(-12vw)}to{transform:translateX(112vw)}}
+@keyframes swimL{from{transform:translateX(112vw) scaleX(-1)}to{transform:translateX(-12vw) scaleX(-1)}}
+.jelly{position:absolute;width:62px;animation:drift 7s ease-in-out infinite alternate}
+.jelly svg{display:block;width:100%;overflow:visible}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(14px,-34px)}}
+.pulse{transform-box:fill-box;transform-origin:50% 100%;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1,1)}50%{transform:scale(1.1,.9)}}
+.crab{transform-box:fill-box;transform-origin:50% 100%;animation:scuttle 6s ease-in-out infinite}
+@keyframes scuttle{0%,100%{transform:translateX(0)}30%{transform:translateX(26px)}60%{transform:translateX(-6px)}}
+.star{transform-box:fill-box;transform-origin:50% 50%;animation:twinkle 5s ease-in-out infinite alternate}
+@keyframes twinkle{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+
+/* Ending: something floats in the distance */
+.card p.ending{border-left:5px solid var(--coral);padding-left:14px;font-weight:700}
+.bottle{position:absolute;right:1%;top:17%;width:42px;padding:6px;background:none;border:0;cursor:pointer;opacity:.6;filter:blur(.7px);transition:opacity .6s,filter .6s,transform .6s;z-index:2;-webkit-tap-highlight-color:transparent}
+.bottle svg{display:block;width:100%;overflow:visible;animation:floaty 5s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-24deg)}50%{transform:translateY(9px) rotate(-14deg)}}
+.bottle.seen{opacity:1;filter:none;transform:scale(1.35)}
+.bottle.seen::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:3px solid rgba(255,255,255,.8);animation:ring 1.8s ease-out infinite}
+.wface{display:none}
+.stage.worried .wface{display:inline}
+.stage.worried .hface{display:none}
+.stage.worried .fish:not(.pop) .inner{animation:shiver .45s ease-in-out infinite}
+@keyframes shiver{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+
+/* Dialogs */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(2,30,70,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px;
+  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.overlay.open{opacity:1;visibility:visible}
+.dialog{width:min(520px,100%);max-height:90dvh;overflow:auto;background:var(--pop-bg);border:4px solid var(--edge);border-radius:28px;padding:26px;text-align:center;
+  box-shadow:0 12px 0 rgba(0,40,80,.25);transform:scale(.8) translateY(20px);transition:transform .4s cubic-bezier(.3,1.4,.5,1)}
+.overlay.open .dialog{transform:none}
+.dialog h3{font-size:1.7rem;margin:0 0 8px;color:var(--sea)}
+.dialog p{font-size:1.12rem;line-height:1.6;margin:0 0 14px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 14px}
+.chip{font-family:"Fredoka",sans-serif;font-size:1.05rem;border:3px solid var(--edge);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 18px;cursor:pointer;min-height:44px;transition:transform .15s,background .2s}
+.chip:hover{transform:translateY(-2px)}
+.chip[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:#fff}
+.fact{min-height:5.2em;background:var(--card);border-radius:18px;padding:12px 16px;font-weight:700;font-size:1.08rem;line-height:1.55;margin-bottom:16px;color:var(--ink)}
+.fact.swap{animation:swap .4s ease}
+@keyframes swap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.big{font-size:3.2rem;margin:0}
+@media (max-width:820px){
+  .grid{grid-template-columns:1fr}
+  .stage{height:340px;max-width:520px;margin:0 auto;width:100%}
+  .page{padding-bottom:130px}
+  .card{padding:22px 20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  #bubbles,.rays{display:none}
+}
+
+[hidden]{display:none!important}
+.page:focus{outline:none}
+/* ---------- Cover page ---------- */
+.cover{max-width:1040px}
+.logo-wrap{text-align:center;margin-bottom:16px;animation:enter .8s both}
+.logo-card{display:inline-block;background:#fff;border-radius:22px;padding:12px 26px;box-shadow:0 6px 0 rgba(0,50,90,.2),0 14px 30px rgba(0,30,70,.28)}
+.logo-card img{display:block;height:clamp(64px,11vw,92px);width:auto;max-width:100%}
+.course{width:fit-content;max-width:100%;margin:0 auto 6px;text-align:center;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.55);border-radius:20px;padding:10px 22px;color:#fff;text-shadow:0 2px 5px rgba(0,40,90,.4);animation:enter .8s .1s both}
+.course b{display:block;font-family:"Fredoka",sans-serif;font-size:clamp(1.15rem,3vw,1.5rem);letter-spacing:.04em}
+.course span{display:block;font-weight:800;font-size:clamp(.92rem,2.2vw,1.1rem);letter-spacing:.03em;line-height:1.4}
+.hero{display:grid;grid-template-columns:1fr 1.7fr 1fr;align-items:center;gap:10px;text-align:center;min-height:clamp(320px,46vh,430px)}
+.hero .inner{display:block;animation:bob 3.6s ease-in-out infinite}
+.hero svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 8px 8px rgba(0,40,80,.3))}
+.hero .fishbox .inner{animation-duration:2.8s;animation-delay:-1s}
+.hero .turtlebox{align-self:end}
+.hero .turtlebox,.hero .fishbox{position:relative;padding-bottom:26px}
+.hero .name{white-space:normal;width:max-content;max-width:100%;text-align:center;line-height:1.2;padding:4px 14px;font-size:clamp(.9rem,2.4vw,1.1rem)}
+.titleblock{animation:enter 1s .2s both}
+.titleblock h1{margin:0;color:#fff;line-height:1.04;font-size:clamp(2.3rem,6.4vw,4.4rem);text-shadow:0 4px 0 #0a4c8c,0 10px 22px rgba(0,30,70,.5)}
+.titleblock h1 small{display:block;margin-top:10px;color:#ffd45e;font-size:.5em;line-height:1.15}
+.sdg{display:inline-block;margin:18px 0 20px;background:#0a97d9;color:#fff;border:3px solid #fff;border-radius:999px;padding:8px 22px;font-family:"Fredoka",sans-serif;font-size:clamp(1rem,2.6vw,1.3rem);box-shadow:0 5px 0 rgba(0,50,90,.3)}
+.btn.big{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.4rem;padding:15px 40px;animation:nudge 2.4s 1.4s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.group{margin-top:26px;animation:enter .9s .35s both}
+.group-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.group-head h2{margin:0;font-size:clamp(1.4rem,3.5vw,1.9rem);color:var(--sea)}
+.section{background:var(--sun);color:#4a3200;font-family:"Fredoka",sans-serif;border-radius:999px;padding:5px 18px;font-size:1.1rem;box-shadow:0 3px 0 #d79e1d}
+.members{width:100%;border-collapse:collapse;font-size:clamp(.95rem,2.2vw,1.1rem)}
+.members th{text-align:left;font-family:"Fredoka",sans-serif;color:#fff;background:var(--sea);padding:10px 14px}
+.members th:first-child{border-radius:14px 0 0 14px}.members th:last-child{border-radius:0 14px 14px 0}
+.members td{padding:11px 14px;font-weight:800;border-bottom:2px dashed var(--edge);line-height:1.35}
+.members td:last-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
+.members tr:last-child td{border-bottom:0}
+@media (max-width:820px){
+  .hero{grid-template-columns:1.35fr 1fr;gap:6px;min-height:0}
+  .titleblock{order:-1;grid-column:1/-1;margin-bottom:10px}
+  .members td:last-child{white-space:normal}
+  .members td,.members th{padding:9px 8px}
+}
+/* ---------- AI Collaboration Log ---------- */
+.log{max-width:1180px}
+.top{display:grid;grid-template-columns:150px 1fr 150px;align-items:end;gap:12px;text-align:center;margin-bottom:22px;color:#fff;text-shadow:0 2px 6px rgba(0,40,90,.4)}
+.top .inner{display:block;animation:bob 3.6s ease-in-out infinite}
+.top svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 6px 6px rgba(0,40,80,.3))}
+.top h1{margin:6px 0 8px;font-size:clamp(2rem,5.4vw,3.4rem);line-height:1.05;text-shadow:0 4px 0 #0a4c8c,0 10px 20px rgba(0,30,70,.45)}
+.top .sub{margin:0;font-weight:800;font-size:clamp(.95rem,2.2vw,1.1rem)}
+.tag{display:inline-block;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.55);border-radius:999px;padding:3px 16px;font-family:"Fredoka",sans-serif;font-size:.98rem}
+.sec{margin-bottom:24px;animation:enter .8s both}
+.sec+.sec{animation-delay:.15s}
+.sec h2{margin:0 0 6px;font-size:clamp(1.5rem,3.6vw,2rem);color:var(--sea)}
+.sec .lead{margin:0 0 16px;font-size:1.05rem;line-height:1.6;color:var(--muted);font-weight:700;max-width:75ch}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 16px}
+.tools .btn{font-size:1rem;padding:10px 20px;min-height:44px}
+.btn.ghost{background:var(--card);color:var(--ink);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
+.tablewrap{border-radius:18px;border:3px solid var(--edge);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.logtable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:1rem}
+.logtable th{background:var(--sea);color:#fff;text-align:left;font-family:"Fredoka",sans-serif;font-weight:500;padding:12px 12px;font-size:1.05rem}
+.logtable td{vertical-align:top;padding:12px;border-top:2px dashed var(--edge);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.logtable tbody tr{height:76px}
+.logtable th,.logtable td{border-right:2px solid var(--edge)}
+.logtable th:last-child,.logtable td:last-child{border-right:0}
+.logtable tbody tr:nth-child(even){background:rgba(14,143,184,.06)}
+.logtable th:nth-child(1){width:11%}.logtable th:nth-child(2){width:25%}.logtable th:nth-child(3){width:24%}.logtable th:nth-child(4){width:20%}.logtable th:nth-child(5){width:20%}.logtable th.act{width:0}
+.logtable td.act{padding:8px 4px;text-align:center;white-space:normal;width:0}
+td[contenteditable]:hover{background:rgba(255,201,74,.18)}
+td[contenteditable]:focus{outline:3px solid var(--sea);outline-offset:-3px;background:rgba(255,201,74,.25)}
+td[contenteditable]:empty::before{content:"Click to type…";color:var(--muted);font-style:italic}
+.del{border:0;background:none;color:var(--coral-dark);font-size:1.4rem;line-height:1;cursor:pointer;border-radius:50%;width:34px;height:34px}
+.del:hover{background:rgba(217,75,63,.15)}
+.note{margin:12px 0 0;font-size:.98rem;color:var(--muted);font-weight:700;line-height:1.5}
+.statement{margin:0 0 20px;padding:18px 22px;background:var(--pop-bg);border-left:8px solid var(--coral);border-radius:14px;font-size:clamp(1.1rem,2.4vw,1.3rem);line-height:1.65;font-weight:800}
+.sigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px 30px;margin:0;padding:0;list-style:none}
+.sig .line{min-height:46px;border-bottom:3px solid var(--ink);padding:6px 4px;font-family:"Fredoka",sans-serif;font-size:1.3rem;outline:none}
+.sig .line:focus{background:rgba(255,201,74,.25)}
+.sig .who{margin:6px 0 0;font-weight:800;line-height:1.35}
+.sig .who small{display:block;font-weight:700;color:var(--muted)}
+.sig .date{display:flex;align-items:baseline;gap:8px;margin-top:8px;color:var(--muted);font-weight:700}
+.sig .date span:last-child{flex:1;border-bottom:2px solid var(--muted);min-height:24px;color:var(--ink);outline:none}
+.back{display:inline-flex;text-decoration:none;align-items:center}
+@media (max-width:860px){
+  .top{grid-template-columns:1fr 1fr;}
+  .top .mid{grid-column:1/-1;order:-1}
+  .top .inner{max-width:150px;margin:0 auto}
+  .logtable{min-width:700px;font-size:.9rem}
+  .logtable th,.logtable td{padding:10px 8px}
+}
+
+/* Signature rows */
+.sigimg{display:block;height:70px;width:auto;max-width:100%;background:#fff;border-radius:8px;padding:2px 10px}
+
+.sigtable{list-style:none;margin:0;padding:0;display:grid;gap:18px}
+.sigrow{display:grid;grid-template-columns:1fr 1.4fr;gap:22px;align-items:end;padding:14px 18px;border:2px solid var(--edge);border-radius:16px;background:var(--pop-bg)}
+.sigrow .lab{display:block;font-family:"Fredoka",sans-serif;font-size:.92rem;color:var(--sea);margin-bottom:4px}
+.sigrow .nm strong{display:block;font-size:1.02rem;line-height:1.35}
+.sigrow .nm small{display:block;font-weight:700;color:var(--muted)}
+.sigrow .line{min-height:78px;border-bottom:3px solid var(--ink);padding:6px;font-family:"Fredoka",sans-serif;font-size:1.3rem;outline:none}
+.sigrow .line:focus{background:rgba(255,201,74,.25)}
+@media (max-width:860px){.sigrow{grid-template-columns:1fr;gap:14px}}
+
+/* Printing / Save as PDF of the AI Collaboration Log */
+@media print{
+  :root:has(#view-log:not([hidden])){--card:#fff;--ink:#1d3a5c;--muted:#3d5675;--edge:#8aa6bf;--pop-bg:#fff;color-scheme:light;background:#fff}
+  body:has(#view-log:not([hidden])) :is(.rays,#bubbles,.critters,.seabed){display:none!important}
+  #view-log,#view-log *{-webkit-print-color-adjust:exact;print-color-adjust:exact;animation:none!important}
+  #view-log{max-width:none;padding:0}
+  #view-log :is(.tools,.back,.del,.act,.note,.top .inner){display:none!important}
+  #view-log .top{grid-template-columns:1fr;color:#1d3a5c;text-shadow:none}
+  #view-log .top h1{text-shadow:none}
+  #view-log .tag{border-color:#8aa6bf;background:none}
+  #view-log .card{box-shadow:none;border:2px solid #8aa6bf}
+  #view-log .tablewrap{overflow:visible}
+  #view-log .logtable{min-width:0}
+  #view-log td[contenteditable]:empty::before{content:""}
+  #view-log #ethics{break-inside:avoid;page-break-inside:avoid}
+  #view-log .sigrow{break-inside:avoid;page-break-inside:avoid}
+}
+
+/* PAGE 5 - SOLUTIONS */
+.solution-list {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0;
+}
+
+.solution-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(80,160,200,0.3);
+  border-radius: 16px;
+}
+
+.solution-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.solution-item h3 {
+  margin: 0 0 6px;
+}
+
+.solution-item p {
+  margin: 0;
+  line-height: 1.6;
+}
+/* ============================================================
+   PAGE 3 - TROUBLE IN BLUE BAY
+   Layout: story card on the left, interactive scene on the right
+   (speech bubble above the scene, controls below). Stacks on phones.
+   ============================================================ */
+:root{
+  --p3-bubbles:#1c7446; --p3-finn:#b4460a; --p3-oliver:#6a3fc2;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--p3-bubbles:#6fdc9c;--p3-finn:#ffa66b;--p3-oliver:#c7a6ff}
+}
+:root[data-theme="dark"]{--p3-bubbles:#6fdc9c;--p3-finn:#ffa66b;--p3-oliver:#c7a6ff}
+
+.p3-grid{align-items:start}
+.p3-card,.p3-side{min-width:0}
+.p3-card h2{margin-bottom:6px}
+.p3-card .hint{margin:0 0 14px}
+
+/* Story beats */
+.p3-beat{display:grid;grid-template-columns:46px 1fr;column-gap:14px;padding:12px 12px 4px;margin:0 -12px 8px;border:2px solid transparent;border-radius:20px;cursor:pointer;transition:background .3s,border-color .3s}
+.p3-beat:hover{background:rgba(14,143,184,.06)}
+.p3-beat.now{background:rgba(14,143,184,.12);border-color:var(--sea)}
+.p3-num{align-self:start;width:46px;height:46px;border:0;border-radius:50%;background:var(--sun);color:#4a3200;font-family:"Fredoka",sans-serif;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 0 #d79e1d;transition:transform .15s,background .25s}
+.p3-num:hover{transform:translateY(-2px)}
+.p3-beat.now .p3-num{background:var(--coral);color:#fff;box-shadow:0 4px 0 var(--coral-dark)}
+.p3-body{min-width:0}
+.p3-body p{margin:0 0 9px;max-width:none;font-size:clamp(1.02rem,2vw,1.15rem);line-height:1.65}
+.p3-body p.p3-line{margin:0 0 8px;font-weight:700}
+.p3-line strong{font-family:"Fredoka","Nunito",system-ui,sans-serif;font-weight:600}
+.p3-line[data-who="bubbles"] strong{color:var(--p3-bubbles)}
+.p3-line[data-who="finn"] strong{color:var(--p3-finn)}
+.p3-line[data-who="oliver"] strong{color:var(--p3-oliver)}
+.card .p3-body p.ending{margin-top:4px}
+
+/* Right column */
+.p3-side{display:grid;gap:18px}
+@media (min-width:821px) and (min-height:800px){
+  .p3-side{position:sticky;top:max(16px,env(safe-area-inset-top,0px))}
+}
+
+/* Speech bubble above the scene */
+.p3-speech{position:relative;display:block;width:100%;min-height:118px;text-align:left;cursor:pointer;
+  background:#fff;color:#1d3a5c;border:3px solid #bfe6f5;border-radius:22px;padding:10px 16px 12px;
+  font-family:"Nunito",system-ui,sans-serif;font-weight:700;font-size:clamp(1rem,2.4vw,1.12rem);line-height:1.45;
+  box-shadow:0 6px 0 rgba(0,60,110,.18);--tail:25%}
+.p3-speech b{display:block;font-family:"Fredoka",sans-serif;font-weight:600;font-size:1.08rem;margin-bottom:2px;color:var(--coral-dark)}
+.p3-speech[data-who="bubbles"] b{color:#1c7446}
+.p3-speech[data-who="finn"] b{color:#b4460a}
+.p3-speech[data-who="oliver"] b{color:#6a3fc2}
+.p3-speech .t{display:block}
+.p3-speech .more{display:block;margin-top:4px;min-height:1.1em;font-size:.82rem;font-weight:800;color:#4d6a8a}
+.p3-speech::after{content:"";position:absolute;bottom:-17px;left:calc(var(--tail) - 13px);width:26px;height:26px;background:#fff;
+  border-right:3px solid #bfe6f5;border-bottom:3px solid #bfe6f5;transform:rotate(45deg) skew(8deg,8deg);transition:left .45s ease}
+.p3-speech.swap{animation:swap .35s ease}
+
+/* Scene */
+.p3-scene{position:relative;aspect-ratio:6/5;overflow:hidden;isolation:isolate;border:3px solid rgba(255,255,255,.75);border-radius:28px;
+  background:linear-gradient(180deg,#0e6fae 0%,#1a9bc6 45%,#46c6d6 78%,#8fe3e0 100%);
+  box-shadow:0 10px 0 rgba(0,50,90,.18),0 18px 40px rgba(0,30,70,.3)}
+.p3-scene::before{content:"";position:absolute;inset:-20% -10% 30% -10%;z-index:0;pointer-events:none;opacity:.14;filter:blur(10px);
+  background:repeating-linear-gradient(105deg,transparent 0 40px,#fff 40px 80px,transparent 80px 150px)}
+.p3-reef{position:absolute;left:0;right:0;bottom:0;height:34%;z-index:0;pointer-events:none;filter:saturate(.95);transition:filter 1.4s}
+.p3-reef svg{display:block;width:100%;height:100%}
+.p3-scene[data-step="2"] .p3-reef,.p3-scene[data-step="3"] .p3-reef,.p3-scene[data-step="4"] .p3-reef{filter:saturate(.6) brightness(.95)}
+.p3-scene[data-step="5"] .p3-reef{filter:saturate(.2) brightness(.82)}
+.p3-murk{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.16;transition:opacity 1.4s;
+  background:linear-gradient(180deg,rgba(120,104,50,.55),rgba(88,96,44,.8))}
+.p3-scene[data-step="2"] .p3-murk,.p3-scene[data-step="3"] .p3-murk,.p3-scene[data-step="4"] .p3-murk{opacity:.3}
+.p3-scene[data-step="5"] .p3-murk{opacity:.58}
+
+/* Characters */
+.p3c{position:absolute;z-index:3;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:left 1s ease,top 1s ease,transform 1s ease,opacity .8s ease}
+.p3c .inner{display:block;position:relative;animation:bob 3.6s ease-in-out infinite}
+.p3c svg.cs{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 8px 8px rgba(0,40,80,.3));transition:transform .5s ease}
+.p3c.pop .inner{animation:popT .8s ease}
+.p3-bubbles{left:4%;bottom:10%;width:54%}
+.p3-finn{width:25%;left:60%;top:28%}
+.p3-finn .inner{animation-duration:2.8s;animation-delay:-1s}
+.p3-oliver{right:-2%;bottom:7%;width:42%;transform:translateX(140%);opacity:0;pointer-events:none}
+.p3-scene[data-step="4"] .p3-oliver,.p3-scene[data-step="5"] .p3-oliver{transform:none;opacity:1;pointer-events:auto}
+.p3-oliver .inner{animation-duration:4.4s}
+
+/* Finn moves with the story */
+.p3-scene[data-step="2"] .p3-finn{left:64%;top:24%}
+.p3-scene[data-step="3"] .p3-finn{left:44%;top:20%}
+.p3-scene[data-step="4"] .p3-finn,.p3-scene[data-step="5"] .p3-finn{left:26%;top:22%}
+.p3-scene[data-step="2"] .p3-finn svg.cs,.p3-scene[data-step="3"] .p3-finn svg.cs{transform:scaleX(-1)}
+.p3-scene[data-step="3"] .p3-finn .inner{animation:p3tug .5s ease-in-out infinite alternate}
+@keyframes p3tug{from{transform:rotate(-9deg) translateX(0)}to{transform:rotate(7deg) translateX(9px)}}
+
+/* Bubbles gets stuck */
+.p3-scene[data-step="2"] .p3-bubbles .inner,.p3-scene[data-step="3"] .p3-bubbles .inner{animation:p3struggle .45s ease-in-out infinite alternate}
+@keyframes p3struggle{from{transform:translate(-3px,0) rotate(-2.5deg)}to{transform:translate(3px,-4px) rotate(2.5deg)}}
+.p3-trap{position:absolute;left:-6%;top:-22%;width:112%;z-index:4;pointer-events:none;opacity:0;transform:translateY(-90px) scale(.6);
+  transition:opacity .6s,transform .9s cubic-bezier(.3,1.2,.5,1),left 1s,top 1s,width 1s}
+.p3-trap svg{display:block;width:100%;height:auto;overflow:visible}
+.p3-scene[data-step="2"] .p3-trap,.p3-scene[data-step="3"] .p3-trap{opacity:1;transform:none}
+.p3-scene[data-step="4"] .p3-trap,.p3-scene[data-step="5"] .p3-trap{opacity:1;left:100%;top:6%;width:30%;transform:rotate(-12deg)}
+
+/* Worried / relieved faces */
+.p3-scene.worried .wface{display:inline}
+.p3-scene.worried .hface{display:none}
+
+/* Floating rubbish */
+.p3-item{position:absolute;z-index:2;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:6px;background:none;border:0;cursor:pointer;
+  opacity:0;transform:scale(.3);pointer-events:none;-webkit-tap-highlight-color:transparent;
+  transition:opacity .7s,transform .7s cubic-bezier(.3,1.4,.5,1)}
+.p3-item.in{opacity:.96;transform:none;pointer-events:auto}
+.p3-item .fl{display:block;animation:p3float 5s ease-in-out infinite alternate;animation-delay:var(--d,0s)}
+.p3-item svg{display:block;width:var(--w,34px);height:auto;overflow:visible;filter:drop-shadow(0 4px 4px rgba(0,40,80,.3))}
+.p3-item.wob .fl{animation:p3wob .6s ease}
+@keyframes p3float{from{transform:translate(0,0) rotate(-10deg)}to{transform:translate(6px,-12px) rotate(10deg)}}
+@keyframes p3wob{0%{transform:scale(1)}30%{transform:scale(1.3) rotate(-14deg)}65%{transform:scale(.95) rotate(8deg)}100%{transform:scale(1)}}
+
+/* Controls panel */
+.p3-panel{background:var(--card);border:3px solid var(--edge);border-radius:24px;padding:14px 16px 16px;
+  box-shadow:0 8px 0 rgba(0,50,90,.16),0 14px 30px rgba(0,30,70,.25)}
+.p3-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-bottom:12px}
+.p3-cap{margin:0;font-size:1.2rem;line-height:1.2;color:var(--sea)}
+.p3-water{font-family:"Fredoka",sans-serif;font-size:.95rem;border-radius:999px;padding:3px 14px;white-space:nowrap;transition:background .6s,color .6s;
+  background:#cfeefb;color:#0b4a6e}
+.p3-water[data-level="cloudy"]{background:#ffe9a8;color:#5a4300}
+.p3-water[data-level="dirty"]{background:#e6c79a;color:#5a3a10}
+.p3-water[data-level="unsafe"]{background:#ffb3a8;color:#7a1e14}
+.p3-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.p3-controls .btn{font-size:1rem;padding:10px 18px;min-height:48px}
+.p3-controls .btn:disabled{opacity:.4;cursor:default;transform:none}
+.p3-chips{display:flex;gap:6px;justify-content:center}
+.p3-chips .chip{min-width:44px;padding:9px 0;text-align:center}
+.p3-tip{margin:12px 0 0;min-height:3em;font-weight:700;font-size:1rem;line-height:1.5;color:var(--muted)}
+@media (max-width:560px){
+  .p3-controls{justify-content:center}
+  .p3-chips{order:3;flex-basis:100%}
+  .p3-controls .btn{flex:1 1 40%}
+}
+
+/* Ask Oliver dialog */
+.p3-compare{display:flex;justify-content:center;align-items:flex-end;gap:26px;margin:0 0 10px}
+.p3-compare figure{margin:0;display:grid;justify-items:center;gap:4px;font-family:"Fredoka",sans-serif;font-size:.95rem}
+.p3-compare svg{display:block;width:72px;height:auto;overflow:visible}
+#p3Fact{min-height:9.5em}
+#p3Fact p{margin:0 0 6px;font-size:1.05rem}
+
+@media (max-width:820px){
+  .p3-side{max-width:520px;margin:0 auto;width:100%}
+  .p3-scene{aspect-ratio:1/1}
+  .p3-speech{min-height:150px}
+  .p3-beat{margin-left:-8px;margin-right:-8px;padding-left:8px;padding-right:8px;grid-template-columns:42px 1fr;column-gap:10px}
+  .p3-num{width:42px;height:42px;font-size:1.15rem}
+}
+</style>
+</head>
+<body>
+<div class="rays" aria-hidden="true"></div>
+<div id="bubbles" aria-hidden="true"></div>
+
+<div class="critters" aria-hidden="true">
+  <svg width="0" height="0" style="position:absolute"><defs>
+    <symbol id="mini" viewBox="0 0 40 24"><path d="M10 12L1 3Q-1 12 1 21Z" fill="currentColor"/><ellipse cx="24" cy="12" rx="15" ry="9" fill="currentColor"/><circle cx="31" cy="10" r="2.6" fill="#fff"/><circle cx="31.8" cy="10" r="1.2" fill="#1d3a5c"/></symbol>
+  </defs></svg>
+  <span class="mf" style="top:14%;color:#ffd45e;animation-duration:26s;animation-delay:-4s"><svg><use href="#mini"/></svg></span>
+  <span class="mf" style="top:17%;color:#ffd45e;width:26px;height:15px;animation-duration:26s;animation-delay:-1.5s"><svg><use href="#mini"/></svg></span>
+  <span class="mf" style="top:12%;color:#ffd45e;width:28px;height:17px;animation-duration:26s;animation-delay:-2.7s"><svg><use href="#mini"/></svg></span>
+  <span class="mf l" style="top:58%;color:#ff8fb1;animation-duration:32s;animation-delay:-10s"><svg><use href="#mini"/></svg></span>
+  <span class="mf l" style="top:61%;color:#ff8fb1;width:26px;height:15px;animation-duration:32s;animation-delay:-8.5s"><svg><use href="#mini"/></svg></span>
+  <span class="mf" style="top:42%;color:#b9f0ff;width:30px;height:18px;animation-duration:38s;animation-delay:-20s"><svg><use href="#mini"/></svg></span>
+  <div class="jelly" style="left:2%;top:36%"><svg viewBox="0 0 60 90"><g class="pulse"><path d="M6 36Q6 4 30 4T54 36Q30 44 6 36Z" fill="#ff9fd0" opacity=".85"/><circle cx="22" cy="20" r="4" fill="#fff" opacity=".6"/></g><g stroke="#ffb8dc" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"><path d="M16 40q-6 14 0 26t-2 20"/><path d="M30 42q6 14 0 26t4 18"/><path d="M44 40q-6 14 0 24t-2 20"/></g></svg></div>
+  <div class="jelly" style="right:3%;top:8%;width:46px;animation-duration:9s;animation-delay:-3s"><svg viewBox="0 0 60 90"><g class="pulse"><path d="M6 36Q6 4 30 4T54 36Q30 44 6 36Z" fill="#c7a6ff" opacity=".85"/><circle cx="22" cy="20" r="4" fill="#fff" opacity=".6"/></g><g stroke="#d9c2ff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"><path d="M16 40q-6 14 0 26t-2 20"/><path d="M30 42q6 14 0 26t4 18"/><path d="M44 40q-6 14 0 24t-2 20"/></g></svg></div>
+</div>
+
+<svg class="seabed" viewBox="0 0 1200 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <path d="M0 260V222Q300 196 600 224T1200 212V260Z" fill="#f2d59b"/>
+  <path d="M0 260V240Q300 224 600 244T1200 236V260Z" fill="#e6c07a"/>
+  <!-- seaweed -->
+  <g stroke="#2fb36b" stroke-width="11" fill="none" stroke-linecap="round">
+    <path class="sway" d="M60 235C30 200 90 170 60 130S40 80 60 60"/>
+    <path class="sway b" d="M88 238C62 205 110 180 90 150"/>
+    <path class="sway b" d="M330 238C300 200 360 175 330 135S320 95 335 80"/>
+    <path class="sway" d="M575 240C545 205 605 180 575 145"/>
+    <path class="sway b" d="M890 238C860 200 920 170 890 130S880 90 895 70"/>
+    <path class="sway" d="M1130 238C1100 205 1160 175 1130 140S1120 110 1135 95"/>
+  </g>
+  <!-- branching coral -->
+  <g stroke-linecap="round" fill="none" stroke-width="15">
+    <g stroke="#ff6f91"><path d="M170 235V150M170 195L130 155M170 180L210 140M130 155V125M210 140V112"/></g>
+    <g stroke="#ff9a3c"><path d="M440 238V160M440 205L405 170M440 190L478 155M405 170V140M478 155V128"/></g>
+    <g stroke="#a56cf0"><path d="M740 238V150M740 200L705 165M740 185L778 148M778 148V118M705 165V135"/></g>
+    <g stroke="#ff6f91"><path d="M1010 238V165M1010 205L980 175M1010 195L1042 165"/></g>
+  </g>
+  <!-- brain + fan corals -->
+  <circle cx="265" cy="228" r="30" fill="#f7a8b8"/><path d="M245 225q10-10 20 0t20 0M248 238q10-9 20 0t16 0" stroke="#e0788f" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <circle cx="640" cy="230" r="26" fill="#ffd45e"/><path d="M622 226q9-9 18 0t18 0M625 238q9-8 18 0t14 0" stroke="#e5a91f" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M830 240q-45-70 0-100 45 30 0 100z" fill="#ff7fa0" opacity=".9"/>
+  <path d="M1090 240q-40-60 0-90 40 30 0 90z" fill="#7c5cf2" opacity=".9"/>
+  <!-- starfish -->
+  <polygon class="star" points="380,226 386,238 399,239 389,247 392,260 380,253 368,260 371,247 361,239 374,238" fill="#ff8a3d" transform="translate(0,-14)"/>
+  <!-- crab -->
+  <g class="crab"><g transform="translate(900 222)"><path d="M-26 6l-14 8M-22 10l-12 12M26 6l14 8M22 10l12 12" stroke="#e9503f" stroke-width="4" stroke-linecap="round"/><ellipse cx="0" cy="6" rx="26" ry="16" fill="#ff6a57"/><path d="M-22 -2q-14-16-4-22M22 -2q14-16 4-22" stroke="#ff6a57" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="-26" cy="-24" r="7" fill="#ff6a57"/><circle cx="26" cy="-24" r="7" fill="#ff6a57"/><circle cx="-8" cy="-8" r="5" fill="#fff"/><circle cx="8" cy="-8" r="5" fill="#fff"/><circle cx="-8" cy="-8" r="2.2" fill="#1d3a5c"/><circle cx="8" cy="-8" r="2.2" fill="#1d3a5c"/><path d="M-6 8q6 6 12 0" stroke="#8a1f14" stroke-width="2.5" fill="none" stroke-linecap="round"/></g></g>
+  <g fill="#ffe27a"><circle cx="510" cy="232" r="9"/><circle cx="528" cy="236" r="7"/><circle cx="975" cy="236" r="8"/></g>
+</svg>
+
+
+<main class="page cover" id="view-cover" tabindex="-1">
+  <div class="logo-wrap"><div class="logo-card"><img src="data:image/png;base64,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" width="374" height="136" alt="UNITAR International University – Established since 1997"></div></div>
+
+  <div class="course"><b>GEN61013</b><span>PRINCIPLES OF GENERATIVE AI AND APPLICATIONS</span></div>
+
+  <section class="hero" aria-label="Book cover">
+    <div class="turtlebox"><span class="inner"><svg viewBox="0 0 270 190" aria-hidden="true">
+            <path class="tail" d="M52 128L14 140 50 148Z" fill="#5cc97f"/>
+            <ellipse class="flip" cx="78" cy="152" rx="34" ry="14" transform="rotate(-18 78 152)" fill="#5cc97f"/>
+            <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="#2fa564"/>
+            <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="none" stroke="#1f8550" stroke-width="5"/>
+            <g fill="#4bc47e" stroke="#1f8550" stroke-width="4" stroke-linejoin="round">
+              <polygon points="128,56 152,70 152,96 128,110 104,96 104,70"/>
+              <polygon points="82,82 104,96 104,118 82,126 62,114 62,94" opacity=".95"/>
+              <polygon points="174,82 194,94 194,114 174,126 152,118 152,96" opacity=".95"/>
+            </g>
+            <circle cx="118" cy="76" r="5" fill="#fff" opacity=".55"/>
+            <rect x="38" y="118" width="180" height="24" rx="12" fill="#f4cf7d"/>
+            <path d="M60 130h136" stroke="#e1b25a" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+            <ellipse class="flip" cx="170" cy="150" rx="34" ry="14" transform="rotate(22 170 150)" fill="#7ddc8f"/>
+            <circle cx="232" cy="104" r="30" fill="#7ddc8f"/>
+            <circle cx="241" cy="96" r="9" fill="#fff"/><circle cx="244" cy="96" r="4.5" fill="#1d3a5c"/><circle cx="245.5" cy="94" r="1.6" fill="#fff"/>
+            <circle cx="238" cy="116" r="6" fill="#ff9fb2" opacity=".75"/>
+            <path class="hface" d="M246 112Q254 118 258 108" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M231 82L251 86"/><path d="M246 118Q252 110 259 117"/><path d="M218 70q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+          </svg></span><span class="name">Bubbles the Sea Turtle</span></div>
+    <div class="titleblock">
+      <h1>The Ocean’s Cry:<small>A Journey to Save Blue Bay</small></h1>
+      <div class="sdg">SDG 14 – Life Below Water</div><br>
+      <a class="btn primary big" id="start" href="#page-2">Start Reading</a>
+    </div>
+    <div class="fishbox"><span class="inner"><svg viewBox="0 0 170 120" aria-hidden="true">
+            <path class="tail" d="M40 60L6 28Q0 58 6 92Z" fill="#ff7a45"/>
+            <path d="M70 26Q92 0 118 24Z" fill="#ff7a45"/>
+            <path d="M80 92Q92 118 112 94Z" fill="#ff7a45"/>
+            <ellipse cx="92" cy="60" rx="58" ry="38" fill="#ffa24a"/>
+            <path d="M74 24Q62 60 74 96" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>
+            <path d="M100 25Q90 60 100 95" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" opacity=".9"/>
+            <ellipse cx="96" cy="78" rx="30" ry="12" fill="#ffd08a" opacity=".6"/>
+            <circle cx="128" cy="50" r="11" fill="#fff"/><circle cx="131" cy="50" r="5.5" fill="#1d3a5c"/><circle cx="133" cy="48" r="2" fill="#fff"/>
+            <circle cx="132" cy="72" r="6" fill="#ff7fa0" opacity=".7"/>
+            <path class="hface" d="M138 66Q147 72 150 62" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M117 33L138 40"/><path d="M138 72Q144 63 151 71"/><path d="M104 30q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+          </svg></span><span class="name">Finn the Little Fish</span></div>
+  </section>
+
+  <section class="card group" aria-labelledby="gm">
+    <div class="group-head"><h2 id="gm">Group Members</h2><span class="section">Section: MC-036</span></div>
+    <table class="members">
+      <thead><tr><th scope="col">Name</th><th scope="col">Matric Number</th></tr></thead>
+      <tbody>
+        <tr><td>POOVADASHANGARY A/P SELVAKUMARAN</td><td>MC260140138</td></tr>
+        <tr><td>MICHELLE PRIYA A/P PATRIC MICKEL</td><td>MC260340932</td></tr>
+        <tr><td>MUHAMMAD IZHWAN ABD KAHAR</td><td>MC260139690</td></tr>
+        <tr><td>NORVAANISHA BINTI MUHAMMAD SHAH NAWAZ NANTHA</td><td>MC260340941</td></tr>
+        <tr><td>SHARON IGNACIA A/P SAVERIANANDAN</td><td>MC260140308</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+
+
+<main class="page" id="view-p2" tabindex="-1" hidden>
+  <header>
+    <p class="book fred">The Ocean’s Cry: A Journey to Save Blue Bay</p>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><a class="pg" href="#cover" style="color:#fff;text-decoration:none">Back to Cover</a><span class="pg" aria-label="Page 2">Page 2</span></span>
+  </header>
+
+  <div class="grid">
+    <section class="card story" aria-labelledby="ttl">
+      <h2 id="ttl">A Beautiful Home</h2>
+      <p>In a lovely ocean named Blue Bay, lived a little sea turtle named Bubbles and his best little friend Finn.</p>
+      <p>There were colourful coral reefs, beautiful sea plants and lots of different sea animals in Blue Bay. The water was clear and sparkling, making it a wonderful home for all sea creatures. Tall sea plants swayed gently in the current, and tiny fish, crabs and jellyfish played among the bright coral.</p>
+      <p>Every day, Bubbles and Finn enjoyed swimming together, exploring the coral reefs and playing around their beautiful ocean home.</p>
+      <p>Bubbles was a gentle, curious young turtle who wanted to know about everything in the reef. Finn was a cheerful little fish who loved to giggle, zoom and play. When Finn zoomed ahead, Bubbles swam along at his own slow pace, and Finn always waited with a big smile. That is what best friends do.</p>
+      <p class="ending">One bright afternoon, something strange floated far away in the water. It was small and shiny, and it did not look like it belonged in Blue Bay. Bubbles and Finn stopped swimming and stared. What could it be?</p>
+      <p class="hint" id="hint" aria-live="polite">Tap Bubbles and Finn to hear them talk. Can you spot something floating far away?</p>
+      <div class="actions">
+        <button class="btn primary" id="exploreBtn" type="button">Explore Blue Bay</button>
+        <button class="btn secondary" id="nextBtn" type="button">Next Page</button>
+        <a class="btn ghost back" id="logBtn" href="#ai-log">AI Collaboration Log</a>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Bubbles and Finn in Blue Bay">
+      <div class="speech" id="sp-bubbles" role="status"><b>Bubbles</b><span class="line">“Finn, what is that floating over there? I have never seen it before.”</span></div>
+      <div class="speech" id="sp-finn" role="status"><b>Finn</b><span class="line">“I don’t know, Bubbles... It looks strange. I have a funny feeling about it.”</span></div>
+
+      <!-- Something floating far away -->
+      <button class="bottle" id="bottle" type="button" aria-label="Something small and shiny floating far away. Click to see what Bubbles and Finn think.">
+        <svg viewBox="0 0 30 66" aria-hidden="true"><rect x="10" y="0" width="10" height="7" rx="2" fill="#8fd3ff"/><path d="M11 7h8v8q8 5 8 14v30q0 5-5 5H8q-5 0-5-5V29q0-9 8-14z" fill="#d9f2ff" fill-opacity=".7" stroke="#fff" stroke-opacity=".85" stroke-width="2"/><rect x="3" y="34" width="24" height="12" fill="#5fb6e8" opacity=".7"/><path d="M8 24v30" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></svg>
+      </button>
+
+      <!-- Bubbles the sea turtle -->
+      <button class="char turtle hinting" id="turtle" type="button" aria-label="Bubbles the sea turtle. Click to hear what he says.">
+        <span class="inner">
+          <svg viewBox="0 0 270 190" aria-hidden="true">
+            <path class="tail" d="M52 128L14 140 50 148Z" fill="#5cc97f"/>
+            <ellipse class="flip" cx="78" cy="152" rx="34" ry="14" transform="rotate(-18 78 152)" fill="#5cc97f"/>
+            <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="#2fa564"/>
+            <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="none" stroke="#1f8550" stroke-width="5"/>
+            <g fill="#4bc47e" stroke="#1f8550" stroke-width="4" stroke-linejoin="round">
+              <polygon points="128,56 152,70 152,96 128,110 104,96 104,70"/>
+              <polygon points="82,82 104,96 104,118 82,126 62,114 62,94" opacity=".95"/>
+              <polygon points="174,82 194,94 194,114 174,126 152,118 152,96" opacity=".95"/>
+            </g>
+            <circle cx="118" cy="76" r="5" fill="#fff" opacity=".55"/>
+            <rect x="38" y="118" width="180" height="24" rx="12" fill="#f4cf7d"/>
+            <path d="M60 130h136" stroke="#e1b25a" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+            <ellipse class="flip" cx="170" cy="150" rx="34" ry="14" transform="rotate(22 170 150)" fill="#7ddc8f"/>
+            <circle cx="232" cy="104" r="30" fill="#7ddc8f"/>
+            <circle cx="241" cy="96" r="9" fill="#fff"/><circle cx="244" cy="96" r="4.5" fill="#1d3a5c"/><circle cx="245.5" cy="94" r="1.6" fill="#fff"/>
+            <circle cx="238" cy="116" r="6" fill="#ff9fb2" opacity=".75"/>
+            <path class="hface" d="M246 112Q254 118 258 108" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M231 82L251 86"/><path d="M246 118Q252 110 259 117"/><path d="M218 70q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+          </svg>
+        </span>
+        <span class="name">Bubbles · curious</span>
+      </button>
+
+      <!-- Finn the little fish -->
+      <button class="char fish hinting" id="fish" type="button" aria-label="Finn the little fish. Click to hear what he says.">
+        <span class="inner">
+          <svg viewBox="0 0 170 120" aria-hidden="true">
+            <path class="tail" d="M40 60L6 28Q0 58 6 92Z" fill="#ff7a45"/>
+            <path d="M70 26Q92 0 118 24Z" fill="#ff7a45"/>
+            <path d="M80 92Q92 118 112 94Z" fill="#ff7a45"/>
+            <ellipse cx="92" cy="60" rx="58" ry="38" fill="#ffa24a"/>
+            <path d="M74 24Q62 60 74 96" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>
+            <path d="M100 25Q90 60 100 95" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" opacity=".9"/>
+            <ellipse cx="96" cy="78" rx="30" ry="12" fill="#ffd08a" opacity=".6"/>
+            <circle cx="128" cy="50" r="11" fill="#fff"/><circle cx="131" cy="50" r="5.5" fill="#1d3a5c"/><circle cx="133" cy="48" r="2" fill="#fff"/>
+            <circle cx="132" cy="72" r="6" fill="#ff7fa0" opacity=".7"/>
+            <path class="hface" d="M138 66Q147 72 150 62" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M117 33L138 40"/><path d="M138 72Q144 63 151 71"/><path d="M104 30q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+          </svg>
+        </span>
+        <span class="name">Finn · cheerful</span>
+      </button>
+    </section>
+  </div>
+</main>
+
+<!-- Explore dialog -->
+<div class="overlay" id="exploreDlg" role="dialog" aria-modal="true" aria-labelledby="exT" aria-hidden="true">
+  <div class="dialog">
+    <p class="big" aria-hidden="true">🌊</p>
+    <h3 id="exT">Welcome to Blue Bay</h3>
+    <p>Blue Bay is full of life and colour. Pick something below to discover why it is such a happy home.</p>
+    <div class="chips" id="chips">
+      <button class="chip" type="button" aria-pressed="false" data-i="0">Coral reefs</button>
+      <button class="chip" type="button" aria-pressed="false" data-i="1">Sea plants</button>
+      <button class="chip" type="button" aria-pressed="false" data-i="2">Clear water</button>
+      <button class="chip" type="button" aria-pressed="false" data-i="3">Sea animals</button>
+    </div>
+    <div class="fact" id="fact" aria-live="polite">Tap a button to learn something about Blue Bay.</div>
+    <button class="btn primary" type="button" data-close>Back to the story</button>
+  </div>
+</div>
+<!-- PAGE 3: THE PROBLEM BEGINS -->
+<main class="page" id="view-p3" tabindex="-1" hidden>
+
+  <header>
+    <p class="book fred">The Ocean’s Cry: A Journey to Save Blue Bay</p>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><a class="pg" href="#cover" style="color:#fff;text-decoration:none">Back to Cover</a><span class="pg" aria-label="Page 3">Page 3</span></span>
+  </header>
+
+  <div class="grid p3-grid">
+
+    <section class="card p3-card" aria-labelledby="p3-title">
+      <h2 id="p3-title">Trouble in Blue Bay</h2>
+      <p class="hint">Tap a number to see that moment in the bay. Tap the characters and the floating rubbish to explore.</p>
+
+      <article class="p3-beat now" data-title="Plastic builds up" data-water="cloudy" data-label="Water: cloudy">
+        <button class="p3-num" type="button" aria-label="Show moment 1 in the scene: Plastic builds up">1</button>
+        <div class="p3-body">
+          <p class="p3-nar">Day by day, more and more plastic drifted into Blue Bay. First came one bottle, then a cup, then a snack wrapper, then many more. The sparkling water turned cloudy and dull, and it did not feel safe any more.</p>
+          <p class="p3-line" data-who="bubbles"><strong>Bubbles:</strong> <span>“Finn, look at all this rubbish. There was so much less yesterday.”</span></p>
+          <p class="p3-line" data-who="finn"><strong>Finn:</strong> <span>“The water isn’t clear any more, Bubbles. I don’t feel safe here.”</span></p>
+        </div>
+      </article>
+
+      <article class="p3-beat" data-title="Bubbles gets stuck" data-water="dirty" data-label="Water: dirty">
+        <button class="p3-num" type="button" aria-label="Show moment 2 in the scene: Bubbles gets stuck">2</button>
+        <div class="p3-body">
+          <p class="p3-nar">Bubbles swam over to the reef to look for a snack. Suddenly, a big plastic bag floated down and wrapped itself around his flippers. The more he wriggled, the tighter it got!</p>
+          <p class="p3-line" data-who="bubbles"><strong>Bubbles:</strong> <span>“Help! I’m stuck! I can’t move my flippers!”</span></p>
+        </div>
+      </article>
+
+      <article class="p3-beat" data-title="Finn tries to help" data-water="dirty" data-label="Water: dirty">
+        <button class="p3-num" type="button" aria-label="Show moment 3 in the scene: Finn tries to help">3</button>
+        <div class="p3-body">
+          <p class="p3-nar">Finn heard the cry and zoomed over as fast as his little tail could go. He grabbed the bag and pulled and pulled.</p>
+          <p class="p3-line" data-who="finn"><strong>Finn:</strong> <span>“Hold on, Bubbles! I’ll get you out!”</span></p>
+          <p class="p3-line" data-who="bubbles"><strong>Bubbles:</strong> <span>“It’s too tight, Finn. Please keep trying!”</span></p>
+          <p class="p3-line" data-who="finn"><strong>Finn:</strong> <span>“The bag is too big for a little fish like me. Somebody, please help!”</span></p>
+        </div>
+      </article>
+
+      <article class="p3-beat" data-title="Oliver explains" data-water="dirty" data-label="Water: dirty">
+        <button class="p3-num" type="button" aria-label="Show moment 4 in the scene: Oliver explains">4</button>
+        <div class="p3-body">
+          <p class="p3-nar">Just then, wise old Oliver the sea turtle came gliding by. With his gentle flippers and careful beak, he slowly pulled the bag away.</p>
+          <p class="p3-line" data-who="oliver"><strong>Oliver:</strong> <span>“There you go, Bubbles. You are free!”</span></p>
+          <p class="p3-line" data-who="bubbles"><strong>Bubbles:</strong> <span>“Thank you, Oliver! I thought I was stuck forever.”</span></p>
+          <p class="p3-line" data-who="oliver"><strong>Oliver:</strong> <span>“Sea animals can mistake plastic for food. A floating bag can look just like a jellyfish!”</span></p>
+          <p class="p3-line" data-who="oliver"><strong>Oliver:</strong> <span>“Others get trapped in plastic waste, just like you were.”</span></p>
+        </div>
+      </article>
+
+      <article class="p3-beat" data-title="Blue Bay is in danger" data-water="unsafe" data-label="Water: unsafe">
+        <button class="p3-num" type="button" aria-label="Show moment 5 in the scene: Blue Bay is in danger">5</button>
+        <div class="p3-body">
+          <p class="p3-nar">Bubbles and Finn looked around. Bottles, bags and cups floated everywhere, and the colourful reef looked sad and grey.</p>
+          <p class="p3-line" data-who="bubbles"><strong>Bubbles:</strong> <span>“Blue Bay is our beautiful home... and it is in danger.”</span></p>
+          <p class="p3-line" data-who="finn"><strong>Finn:</strong> <span>“We have to help! But where does all this plastic come from?”</span></p>
+          <p class="p3-line ending" data-who="oliver"><strong>Oliver:</strong> <span>“Great question, Finn. Come with me, and we will find out the facts about plastic in our ocean.”</span></p>
+        </div>
+      </article>
+
+      <div class="actions">
+        <a class="btn ghost back" id="p3-prevpage" href="#page-2">◀ Previous Page</a>
+        <button class="btn secondary" id="p3-ask" type="button">Ask Oliver</button>
+        <a class="btn primary back" id="p3-nextpage" href="#page-4">Next Page ▶</a>
+      </div>
+    </section>
+
+    <section class="p3-side" aria-label="Interactive scene: Bubbles, Finn and Oliver in Blue Bay">
+
+      <button class="p3-speech" id="p3-speech" type="button" data-who="bubbles">
+        <b>Bubbles</b>
+        <span class="t" aria-live="polite">“Finn, look at all this rubbish. There was so much less yesterday.”</span>
+        <span class="more">1 of 2 · tap to continue ▸</span>
+      </button>
+
+      <div class="p3-scene worried" id="p3-scene" data-step="1" role="group" aria-label="Underwater scene of Blue Bay">
+
+        <div class="p3-reef" aria-hidden="true">
+          <svg viewBox="0 0 600 160" preserveAspectRatio="xMidYMax slice">
+            <path d="M0 160V118Q150 98 300 120T600 110V160Z" fill="#f2d59b"/>
+            <path d="M0 160V140Q150 126 300 144T600 136V160Z" fill="#e6c07a"/>
+            <g stroke="#2fb36b" stroke-width="9" fill="none" stroke-linecap="round">
+              <path class="sway" d="M40 128C14 100 62 80 40 50S26 20 40 6"/>
+              <path class="sway b" d="M562 128C536 100 584 80 562 52"/>
+              <path class="sway b" d="M300 134C280 110 322 96 300 70"/>
+            </g>
+            <g stroke-linecap="round" fill="none" stroke-width="12">
+              <g stroke="#ff6f91"><path d="M110 130V82M110 108L84 84M110 98L136 74"/></g>
+              <g stroke="#a56cf0"><path d="M210 134V96M210 116L190 100M210 108L232 90"/></g>
+              <g stroke="#ff9a3c"><path d="M450 134V90M450 114L426 92M450 104L476 82"/></g>
+            </g>
+            <circle cx="370" cy="132" r="20" fill="#f7a8b8"/><path d="M356 130q7-7 14 0t14 0" stroke="#e0788f" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <circle cx="512" cy="136" r="15" fill="#ffd45e"/>
+          </svg>
+        </div>
+        <div class="p3-murk" aria-hidden="true"></div>
+
+        <!-- Floating rubbish (tap to learn what it is) -->
+        <button class="p3-item in" type="button" data-min="1" data-name="Plastic bottle" data-tip="It can drift around the sea for a very long time." aria-label="Plastic bottle floating in the water" style="left:66%;top:12%;--w:26px;--d:-1s"><span class="fl"><svg viewBox="0 0 30 66" aria-hidden="true"><rect x="10" y="0" width="10" height="7" rx="2" fill="#8fd3ff"/><path d="M11 7h8v8q8 5 8 14v30q0 5-5 5H8q-5 0-5-5V29q0-9 8-14z" fill="#d9f2ff" fill-opacity=".75" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="3" y="34" width="24" height="12" fill="#5fb6e8" opacity=".7"/></svg></span></button>
+        <button class="p3-item in" type="button" data-min="1" data-name="Plastic cup" data-tip="A hungry fish could mistake a broken piece for food." aria-label="Plastic cup floating in the water" style="left:84%;top:26%;--w:34px;--d:-2.4s"><span class="fl"><svg viewBox="0 0 40 48" aria-hidden="true"><path d="M5 6h30l-4 38H9z" fill="#fff" fill-opacity=".55" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="20" cy="6" rx="15" ry="3.5" fill="#fff" fill-opacity=".75"/><path d="M8 20h24l-1 8H9z" fill="#ff6f61" fill-opacity=".9"/></svg></span></button>
+        <button class="p3-item in" type="button" data-min="1" data-name="Snack wrapper" data-tip="It is so light that the waves carry it far from the shore." aria-label="Snack wrapper floating in the water" style="left:8%;top:20%;--w:46px;--d:-3.1s"><span class="fl"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 8l8 4-4 8 4 8-8 4h60l-8-4 4-8-4-8 8-4z" fill="#ffc94a" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M18 14h28M18 20h28M18 26h18" stroke="#d94b3f" stroke-width="3" stroke-linecap="round"/></svg></span></button>
+        <button class="p3-item" type="button" data-min="2" data-name="Plastic straw" data-tip="It is thin and light, so it floats off and gets lost in the reef." aria-label="Plastic straw floating in the water" style="left:30%;top:10%;--w:16px;--d:-.6s" disabled><span class="fl"><svg viewBox="0 0 14 64" aria-hidden="true"><rect x="3" y="2" width="8" height="60" rx="4" fill="#fff" fill-opacity=".85"/><path d="M3 14h8M3 26h8M3 38h8M3 50h8" stroke="#ff6f61" stroke-width="5"/></svg></span></button>
+        <button class="p3-item" type="button" data-min="3" data-name="Plastic ring" data-tip="Little animals can get stuck inside rings like this one." aria-label="Plastic ring floating in the water" style="left:86%;top:8%;--w:52px;--d:-1.8s" disabled><span class="fl"><svg viewBox="0 0 70 40" aria-hidden="true"><g fill="none" stroke="#d6eefa" stroke-width="5"><circle cx="14" cy="20" r="10"/><circle cx="35" cy="20" r="10"/><circle cx="56" cy="20" r="10"/></g><path d="M14 10h42M14 30h42" stroke="#d6eefa" stroke-width="3"/></svg></span></button>
+        <button class="p3-item" type="button" data-min="5" data-name="Another bottle" data-tip="The more rubbish there is, the dirtier the water gets." aria-label="Another plastic bottle floating in the water" style="left:52%;top:36%;--w:24px;--d:-2.9s" disabled><span class="fl"><svg viewBox="0 0 30 66" aria-hidden="true"><rect x="10" y="0" width="10" height="7" rx="2" fill="#8fd3ff"/><path d="M11 7h8v8q8 5 8 14v30q0 5-5 5H8q-5 0-5-5V29q0-9 8-14z" fill="#d9f2ff" fill-opacity=".75" stroke="#fff" stroke-opacity=".9" stroke-width="2"/><rect x="3" y="34" width="24" height="12" fill="#5fb6e8" opacity=".7"/></svg></span></button>
+        <button class="p3-item" type="button" data-min="5" data-name="Another cup" data-tip="Cups, bottles and bags all end up in the same place: the sea." aria-label="Another plastic cup floating in the water" style="left:12%;top:36%;--w:32px;--d:-.2s" disabled><span class="fl"><svg viewBox="0 0 40 48" aria-hidden="true"><path d="M5 6h30l-4 38H9z" fill="#fff" fill-opacity=".55" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="20" cy="6" rx="15" ry="3.5" fill="#fff" fill-opacity=".75"/><path d="M8 20h24l-1 8H9z" fill="#ff6f61" fill-opacity=".9"/></svg></span></button>
+        <button class="p3-item" type="button" data-min="5" data-name="Another wrapper" data-tip="Small pieces like this are easy for hungry fish to swallow by mistake." aria-label="Another snack wrapper floating in the water" style="left:76%;top:34%;--w:42px;--d:-3.6s" disabled><span class="fl"><svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 8l8 4-4 8 4 8-8 4h60l-8-4 4-8-4-8 8-4z" fill="#ffc94a" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M18 14h28M18 20h28M18 26h18" stroke="#d94b3f" stroke-width="3" stroke-linecap="round"/></svg></span></button>
+        <button class="p3-item" type="button" data-min="5" data-name="Another plastic bag" data-tip="To a turtle, a floating bag can look just like a jellyfish." aria-label="Another plastic bag floating in the water" style="left:44%;top:6%;--w:58px;--d:-1.2s" disabled><span class="fl"><svg viewBox="0 0 300 230" aria-hidden="true"><path d="M104 74C96 20 140 2 150 66" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="7" stroke-linecap="round"/><path d="M150 66C160 4 206 18 196 74" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="7" stroke-linecap="round"/><path d="M52 66C24 120 22 190 62 216C104 236 196 236 240 214C282 190 280 118 250 66C210 82 90 82 52 66Z" fill="#e9f7ff" fill-opacity=".5" stroke="#fff" stroke-opacity=".95" stroke-width="6" stroke-linejoin="round"/></svg></span></button>
+
+        <!-- Bubbles the sea turtle (the bag that traps him lives inside, so it moves with him) -->
+        <button class="p3c p3-bubbles" id="p3-bubbles" type="button" aria-label="Bubbles the sea turtle. Tap to hear what he says.">
+          <span class="inner">
+            <svg class="cs" viewBox="0 0 270 190" aria-hidden="true">
+              <path class="tail" d="M52 128L14 140 50 148Z" fill="#5cc97f"/>
+              <ellipse class="flip" cx="78" cy="152" rx="34" ry="14" transform="rotate(-18 78 152)" fill="#5cc97f"/>
+              <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="#2fa564"/>
+              <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="none" stroke="#1f8550" stroke-width="5"/>
+              <g fill="#4bc47e" stroke="#1f8550" stroke-width="4" stroke-linejoin="round">
+                <polygon points="128,56 152,70 152,96 128,110 104,96 104,70"/>
+                <polygon points="82,82 104,96 104,118 82,126 62,114 62,94" opacity=".95"/>
+                <polygon points="174,82 194,94 194,114 174,126 152,118 152,96" opacity=".95"/>
+              </g>
+              <circle cx="118" cy="76" r="5" fill="#fff" opacity=".55"/>
+              <rect x="38" y="118" width="180" height="24" rx="12" fill="#f4cf7d"/>
+              <path d="M60 130h136" stroke="#e1b25a" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+              <ellipse class="flip" cx="170" cy="150" rx="34" ry="14" transform="rotate(22 170 150)" fill="#7ddc8f"/>
+              <circle cx="232" cy="104" r="30" fill="#7ddc8f"/>
+              <circle cx="241" cy="96" r="9" fill="#fff"/><circle cx="244" cy="96" r="4.5" fill="#1d3a5c"/><circle cx="245.5" cy="94" r="1.6" fill="#fff"/>
+              <circle cx="238" cy="116" r="6" fill="#ff9fb2" opacity=".75"/>
+              <path class="hface" d="M246 112Q254 118 258 108" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M231 82L251 86"/><path d="M246 118Q252 110 259 117"/><path d="M218 70q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+            </svg>
+            <span class="p3-trap" aria-hidden="true">
+              <svg viewBox="0 0 300 230">
+                <path d="M104 74C96 20 140 2 150 66" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="6" stroke-linecap="round"/>
+                <path d="M150 66C160 4 206 18 196 74" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="6" stroke-linecap="round"/>
+                <path d="M52 66C24 120 22 190 62 216C104 236 196 236 240 214C282 190 280 118 250 66C210 82 90 82 52 66Z" fill="#e9f7ff" fill-opacity=".42" stroke="#fff" stroke-opacity=".95" stroke-width="4" stroke-linejoin="round"/>
+                <path d="M82 96C68 140 80 180 98 208M130 100C124 140 134 184 140 220M186 100C196 140 188 184 176 218M232 98C246 140 238 176 222 204" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3.5" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </span>
+        </button>
+
+        <!-- Finn the little fish -->
+        <button class="p3c p3-finn" id="p3-finn" type="button" aria-label="Finn the little fish. Tap to hear what he says.">
+          <span class="inner">
+            <svg class="cs" viewBox="0 0 170 120" aria-hidden="true">
+              <path class="tail" d="M40 60L6 28Q0 58 6 92Z" fill="#ff7a45"/>
+              <path d="M70 26Q92 0 118 24Z" fill="#ff7a45"/>
+              <path d="M80 92Q92 118 112 94Z" fill="#ff7a45"/>
+              <ellipse cx="92" cy="60" rx="58" ry="38" fill="#ffa24a"/>
+              <path d="M74 24Q62 60 74 96" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>
+              <path d="M100 25Q90 60 100 95" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" opacity=".9"/>
+              <ellipse cx="96" cy="78" rx="30" ry="12" fill="#ffd08a" opacity=".6"/>
+              <circle cx="128" cy="50" r="11" fill="#fff"/><circle cx="131" cy="50" r="5.5" fill="#1d3a5c"/><circle cx="133" cy="48" r="2" fill="#fff"/>
+              <circle cx="132" cy="72" r="6" fill="#ff7fa0" opacity=".7"/>
+              <path class="hface" d="M138 66Q147 72 150 62" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M117 33L138 40"/><path d="M138 72Q144 63 151 71"/><path d="M104 30q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+            </svg>
+          </span>
+        </button>
+
+        <!-- Oliver the wise old sea turtle (swims in at moment 4) -->
+        <button class="p3c p3-oliver" id="p3-oliver" type="button" aria-label="Oliver the wise old sea turtle. Tap to hear what he says.">
+          <span class="inner">
+            <svg class="cs" viewBox="0 0 270 190" aria-hidden="true">
+              <g transform="translate(270 0) scale(-1 1)">
+                <path class="tail" d="M52 128L14 140 50 148Z" fill="#8fa97f"/>
+                <ellipse class="flip" cx="78" cy="152" rx="34" ry="14" transform="rotate(-18 78 152)" fill="#8fa97f"/>
+                <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="#7d6b3c"/>
+                <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="none" stroke="#5a4a24" stroke-width="5"/>
+                <g fill="#927f4a" stroke="#5a4a24" stroke-width="4" stroke-linejoin="round">
+                  <polygon points="128,56 152,70 152,96 128,110 104,96 104,70"/>
+                  <polygon points="82,82 104,96 104,118 82,126 62,114 62,94" opacity=".95"/>
+                  <polygon points="174,82 194,94 194,114 174,126 152,118 152,96" opacity=".95"/>
+                </g>
+                <circle cx="118" cy="76" r="5" fill="#fff" opacity=".3"/>
+                <rect x="38" y="118" width="180" height="24" rx="12" fill="#e3d3a0"/>
+                <path d="M60 130h136" stroke="#c9b777" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+                <ellipse class="flip" cx="170" cy="150" rx="34" ry="14" transform="rotate(22 170 150)" fill="#a3bd92"/>
+                <circle cx="232" cy="104" r="32" fill="#a3bd92"/>
+                <path d="M204 118q6 5 12 0M202 128q7 5 13 0" stroke="#7f9a70" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <path d="M226 112q4 3 8 0" stroke="#7f9a70" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M228 94L210 86" stroke="#4a3a1e" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="241" cy="96" r="14" fill="rgba(255,255,255,.2)" stroke="#4a3a1e" stroke-width="3.5"/>
+                <circle cx="241" cy="96" r="7" fill="#fff"/><circle cx="243" cy="96" r="3.6" fill="#1d3a5c"/><circle cx="244.3" cy="94.6" r="1.3" fill="#fff"/>
+                <path d="M226 79Q240 68 256 80" stroke="#f2f2f2" stroke-width="7" fill="none" stroke-linecap="round"/>
+                <circle cx="240" cy="120" r="6" fill="#ff9fb2" opacity=".6"/>
+                <path d="M247 115Q256 121 261 111" stroke="#3a4a2a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      <div class="p3-panel">
+        <div class="p3-head">
+          <h3 class="p3-cap fred" id="p3-cap">Moment 1 of 5 · Plastic builds up</h3>
+          <span class="p3-water" id="p3-water" data-level="cloudy">Water: cloudy</span>
+        </div>
+        <div class="p3-controls">
+          <button class="btn ghost" id="p3-prev" type="button" disabled>◀ Back</button>
+          <div class="p3-chips" id="p3-chips" role="group" aria-label="Choose a moment in the story">
+            <button class="chip" type="button" aria-pressed="true" data-i="0" aria-label="Moment 1">1</button>
+            <button class="chip" type="button" aria-pressed="false" data-i="1" aria-label="Moment 2">2</button>
+            <button class="chip" type="button" aria-pressed="false" data-i="2" aria-label="Moment 3">3</button>
+            <button class="chip" type="button" aria-pressed="false" data-i="3" aria-label="Moment 4">4</button>
+            <button class="chip" type="button" aria-pressed="false" data-i="4" aria-label="Moment 5">5</button>
+          </div>
+          <button class="btn secondary" id="p3-next" type="button">Next ▶</button>
+        </div>
+        <p class="p3-tip" id="p3-tip" aria-live="polite">Tap the floating rubbish to find out what it is.</p>
+      </div>
+
+    </section>
+  </div>
+</main>
+
+<!-- Page 3: Ask Oliver dialog -->
+<div class="overlay" id="p3OliverDlg" role="dialog" aria-modal="true" aria-labelledby="p3OT" aria-hidden="true">
+  <div class="dialog">
+    <p class="big" aria-hidden="true">🐢</p>
+    <h3 id="p3OT">Ask Oliver</h3>
+    <p>Oliver knows why plastic is a problem for sea animals. Pick a question to hear his answer.</p>
+    <div class="chips" id="p3Chips">
+      <button class="chip" type="button" aria-pressed="false" data-i="0">Why do animals eat plastic?</button>
+      <button class="chip" type="button" aria-pressed="false" data-i="1">How do they get trapped?</button>
+      <button class="chip" type="button" aria-pressed="false" data-i="2">Why is plastic bad for Blue Bay?</button>
+    </div>
+    <div class="fact" id="p3Fact" aria-live="polite">Tap a question to hear Oliver’s answer.</div>
+    <button class="btn primary" type="button" data-close>Back to the story</button>
+  </div>
+</div>
+<!-- PAGE 4: THE TRUTH BENEATH THE WAVES -->
+<main class="page" id="view-p4" tabindex="-1" hidden>
+  <iframe
+    src="./fixed%20page%204.html"
+    title="Page 4 - The Truth Beneath the Waves"
+    style="width:100%; height:2400px; border:0; overflow:hidden;"
+    scrolling="no"
+></iframe>
+</main>
+<!-- Next page dialog -->
+<div class="overlay" id="nextDlg" role="dialog" aria-modal="true" aria-labelledby="nxT" aria-hidden="true">
+  <div class="dialog">
+    <p class="big" aria-hidden="true">📖</p>
+    <h3 id="nxT">Coming Soon – The Problem Begins</h3>
+    <p>What is floating in Blue Bay? The next page of the story is on its way. Stay tuned!</p>
+    <button class="btn secondary" type="button" data-close>Back to Page 2</button>
+  </div>
+</div>
+
+<!-- PAGE 5: SOLUTIONS -->
+<main class="page" id="view-p5" tabindex="-1" hidden>
+
+  <header>
+    <p class="book fred">The Ocean’s Cry: A Journey to Save Blue Bay</p>
+    <span style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="pg" href="#page-2" style="color:#fff;text-decoration:none">Back to Story</a>
+      <span class="pg">Page 5</span>
+    </span>
+  </header>
+
+  <div class="grid">
+
+    <section class="card story">
+      <h2>How Can We Save Blue Bay?</h2>
+
+      <p>After seeing the plastic pollution in the ocean, Mia decided to take action. She gathered volunteers to help protect Blue Bay.</p>
+
+      <p><strong>Mia:</strong> "We can all make a difference! Here are four ways we can protect our ocean."</p>
+
+      <div class="solution-list">
+
+        <article class="solution-item">
+          <div class="solution-icon">🏖️</div>
+          <div>
+            <h3>1. Organise Beach Clean-Ups</h3>
+            <p>Volunteers can work together to collect plastic bottles, bags and rubbish from beaches before they reach the ocean.</p>
+          </div>
+        </article>
+
+        <article class="solution-item">
+          <div class="solution-icon">🛍️</div>
+          <div>
+            <h3>2. Reduce Single-Use Plastics</h3>
+            <p>Use reusable shopping bags and water bottles instead of disposable plastic products.</p>
+          </div>
+        </article>
+
+        <article class="solution-item">
+          <div class="solution-icon">♻️</div>
+          <div>
+            <h3>3. Recycle Properly</h3>
+            <p>Separate recyclable materials and dispose of rubbish responsibly to prevent plastic waste from entering rivers and oceans.</p>
+          </div>
+        </article>
+
+        <article class="solution-item">
+          <div class="solution-icon">🤖</div>
+          <div>
+            <h3>4. Use Technology</h3>
+            <p>River Interceptor systems collect floating rubbish from rivers, while ocean-cleaning systems help collect certain types of floating plastic.</p>
+          </div>
+        </article>
+
+      </div>
+
+      <p class="ending">With everyone's help, Blue Bay can become a cleaner and safer home for marine animals.</p>
+
+     <div class="actions">
+  <a class="btn primary" href="#page-6">Next Page</a>
+  <a class="btn ghost back" href="#page-4">Back to Page 4</a>
+</div>
+    </section>
+
+    <section class="stage" aria-label="Mia, Bubbles and Finn">
+      <div class="speech">
+        <b>Mia</b>
+        <span class="line">"Small actions can create a big difference!"</span>
+      </div>
+
+      <div class="speech">
+        <b>Bubbles</b>
+        <span class="line">"Thank you for helping to protect our ocean!"</span>
+      </div>
+
+      <div class="speech">
+        <b>Finn</b>
+        <span class="line">"Let's keep Blue Bay clean and beautiful!"</span>
+      </div>
+
+      <div class="final-characters">
+  <svg viewBox="0 0 160 170" aria-label="Mia">
+    <defs>
+      <linearGradient id="gSu" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#4ae6d6"/>
+        <stop offset="1" stop-color="#12a0a8"/>
+      </linearGradient>
+      <radialGradient id="gSk" cx=".4" cy=".3" r=".8">
+        <stop offset="0" stop-color="#ffe6cc"/>
+        <stop offset="1" stop-color="#ffc59a"/>
+      </radialGradient>
+      <linearGradient id="gHr" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#9a6633"/>
+        <stop offset="1" stop-color="#4d2b12"/>
+      </linearGradient>
+    </defs>
+    <path d="M64 140L50 164L84 160Z" fill="#ff7a59"/>
+<path d="M98 140L110 164L78 162Z" fill="#ff7a59"/>
+<rect x="58" y="88" width="46" height="56" rx="20" fill="url(#gSu)"/>
+<rect x="58" y="108" width="46" height="9" fill="#ffd23f"/>
+<path d="M60 98L36 78" stroke="#ffc59a" stroke-width="11" stroke-linecap="round"/>
+<circle cx="34" cy="76" r="8" fill="url(#gSk)"/>
+<path d="M102 100L122 118" stroke="#ffc59a" stroke-width="11" stroke-linecap="round"/>
+<path d="M122 114Q136 118 132 142H112Q108 122 122 114Z" fill="#2fd17a"/>
+<path d="M118 130h10" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+<path d="M44 54Q16 50 24 88Q36 98 48 82Z" fill="url(#gHr)"/>
+<circle cx="82" cy="58" r="36" fill="url(#gSk)"/>
+<path d="M46 56Q46 20 84 20Q118 20 118 56Q104 34 80 40Q60 42 46 56Z" fill="url(#gHr)"/>
+<rect x="56" y="36" width="52" height="15" rx="7" fill="#ffd23f"/>
+<rect x="60" y="39" width="18" height="9" rx="4.5" fill="#bfeeff"/>
+<rect x="82" y="39" width="18" height="9" rx="4.5" fill="#bfeeff"/>
+<circle cx="70" cy="64" r="6.5" fill="#fff"/>
+<circle cx="72" cy="65" r="4.2" fill="#10243a"/>
+<circle cx="96" cy="64" r="6.5" fill="#fff"/>
+<circle cx="98" cy="65" r="4.2" fill="#10243a"/>
+<circle cx="62" cy="76" r="5" fill="#ff8fa3" opacity=".6"/>
+<circle cx="104" cy="76" r="5" fill="#ff8fa3" opacity=".6"/>
+<path d="M73 78Q83 88 93 78" fill="none" stroke="#10243a" stroke-width="2.6" stroke-linecap="round"/>
+  </svg>
+
+  <svg viewBox="0 0 270 190" aria-label="Bubbles">
+   <path d="M52 128L14 140 50 148Z" fill="#5cc97f"/>
+<ellipse cx="78" cy="152" rx="34" ry="14" transform="rotate(-18 78 152)" fill="#5cc97f"/>
+<path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="#2fa564" stroke="#1f8550" stroke-width="5"/>
+<g fill="#4bc47e" stroke="#1f8550" stroke-width="4">
+  <polygon points="128,56 152,70 152,96 128,110 104,96 104,70"/>
+  <polygon points="82,82 104,96 104,118 82,126 62,114 62,94"/>
+  <polygon points="174,82 194,94 194,114 174,126 152,118 152,96"/>
+</g>
+<circle cx="118" cy="76" r="5" fill="#fff" opacity=".55"/>
+<rect x="38" y="118" width="180" height="24" rx="12" fill="#f4cf7d"/>
+<path d="M60 130h136" stroke="#e1b25a" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+<ellipse cx="170" cy="150" rx="34" ry="14" transform="rotate(22 170 150)" fill="#7ddc8f"/>
+<circle cx="232" cy="104" r="30" fill="#7ddc8f"/>
+<circle cx="241" cy="96" r="9" fill="#fff"/>
+<circle cx="244" cy="96" r="4.5" fill="#1d3a5c"/>
+<circle cx="245.5" cy="94" r="1.6" fill="#fff"/>
+<circle cx="238" cy="116" r="6" fill="#ff9fb2" opacity=".75"/>
+<path d="M246 112Q254 118 258 108" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  </svg>
+
+  <svg viewBox="0 0 170 120" aria-label="Finn">
+    <path d="M40 60L6 28Q0 58 6 92Z" fill="#ff7a45"/>
+<path d="M70 26Q92 0 118 24Z" fill="#ff7a45"/>
+<path d="M80 92Q92 118 112 94Z" fill="#ff7a45"/>
+<ellipse cx="92" cy="60" rx="58" ry="38" fill="#ffa24a"/>
+<path d="M74 24Q62 60 74 96" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round"/>
+<path d="M100 25Q90 60 100 95" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/>
+<ellipse cx="96" cy="78" rx="30" ry="12" fill="#ffd08a" opacity=".6"/>
+<circle cx="128" cy="50" r="11" fill="#fff"/>
+<circle cx="131" cy="50" r="5.5" fill="#1d3a5c"/>
+<circle cx="133" cy="48" r="2" fill="#fff"/>
+<circle cx="132" cy="72" r="6" fill="#ff7fa0" opacity=".7"/>
+<path d="M138 66Q147 72 150 62" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<p class="hint" style="font-size:1.25rem;line-height:1.6;text-align:center;font-weight:900;color:#ffffff;text-shadow:2px 2px 0 #06436b, 0 0 8px #06436b">
+  Together, we can protect our ocean!
+</p>
+    </section>
+
+  </div>
+</main>
+
+
+<main class="page log" id="view-log" tabindex="-1" hidden>
+  <header class="top">
+    <div><span class="inner"><svg viewBox="0 0 270 190" aria-hidden="true">
+            <path class="tail" d="M52 128L14 140 50 148Z" fill="#5cc97f"/>
+            <ellipse class="flip" cx="78" cy="152" rx="34" ry="14" transform="rotate(-18 78 152)" fill="#5cc97f"/>
+            <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="#2fa564"/>
+            <path d="M42 126Q42 42 128 42Q214 42 214 126Z" fill="none" stroke="#1f8550" stroke-width="5"/>
+            <g fill="#4bc47e" stroke="#1f8550" stroke-width="4" stroke-linejoin="round">
+              <polygon points="128,56 152,70 152,96 128,110 104,96 104,70"/>
+              <polygon points="82,82 104,96 104,118 82,126 62,114 62,94" opacity=".95"/>
+              <polygon points="174,82 194,94 194,114 174,126 152,118 152,96" opacity=".95"/>
+            </g>
+            <circle cx="118" cy="76" r="5" fill="#fff" opacity=".55"/>
+            <rect x="38" y="118" width="180" height="24" rx="12" fill="#f4cf7d"/>
+            <path d="M60 130h136" stroke="#e1b25a" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+            <ellipse class="flip" cx="170" cy="150" rx="34" ry="14" transform="rotate(22 170 150)" fill="#7ddc8f"/>
+            <circle cx="232" cy="104" r="30" fill="#7ddc8f"/>
+            <circle cx="241" cy="96" r="9" fill="#fff"/><circle cx="244" cy="96" r="4.5" fill="#1d3a5c"/><circle cx="245.5" cy="94" r="1.6" fill="#fff"/>
+            <circle cx="238" cy="116" r="6" fill="#ff9fb2" opacity=".75"/>
+            <path class="hface" d="M246 112Q254 118 258 108" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M231 82L251 86"/><path d="M246 118Q252 110 259 117"/><path d="M218 70q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+          </svg></span></div>
+    <div class="mid">
+      <span class="tag">Additional page · after the storybook</span>
+      <h1>AI Collaboration Log</h1>
+      <p class="sub">The Ocean’s Cry: A Journey to Save Blue Bay</p>
+    </div>
+    <div><span class="inner"><svg viewBox="0 0 170 120" aria-hidden="true">
+            <path class="tail" d="M40 60L6 28Q0 58 6 92Z" fill="#ff7a45"/>
+            <path d="M70 26Q92 0 118 24Z" fill="#ff7a45"/>
+            <path d="M80 92Q92 118 112 94Z" fill="#ff7a45"/>
+            <ellipse cx="92" cy="60" rx="58" ry="38" fill="#ffa24a"/>
+            <path d="M74 24Q62 60 74 96" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>
+            <path d="M100 25Q90 60 100 95" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" opacity=".9"/>
+            <ellipse cx="96" cy="78" rx="30" ry="12" fill="#ffd08a" opacity=".6"/>
+            <circle cx="128" cy="50" r="11" fill="#fff"/><circle cx="131" cy="50" r="5.5" fill="#1d3a5c"/><circle cx="133" cy="48" r="2" fill="#fff"/>
+            <circle cx="132" cy="72" r="6" fill="#ff7fa0" opacity=".7"/>
+            <path class="hface" d="M138 66Q147 72 150 62" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <g class="wface" stroke="#1d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M117 33L138 40"/><path d="M138 72Q144 63 151 71"/><path d="M104 30q-5 8 0 11t5-4q0-4-5-7z" fill="#8fd3ff" stroke="none"/></g>
+          </svg></span></div>
+  </header>
+
+  <section class="card sec" aria-labelledby="h-log">
+    <h2 id="h-log">AI Collaboration Prompt Log</h2>
+    <p class="lead">Row 1 is complete. Click any blank cell to type, and use Add a row for more interactions.</p>
+    <div class="tools">
+      <button class="btn secondary" id="addRow" type="button">Add a row</button>
+      <button class="btn ghost" id="resetLog" type="button">Reset to original entries</button>
+      <a class="btn ghost back" href="#cover">Back to Storybook</a>
+    </div>
+    <div class="tablewrap">
+      <div class="tools">
+  <button class="btn primary" type="button" onclick="exportLog()">Export Log</button>
+  <button class="btn ghost" type="button" onclick="document.getElementById('importLogFile').click()">Import Log</button>
+  <input type="file" id="importLogFile" accept=".json" hidden>
+</div>
+      <table class="logtable" id="logTable">
+        <thead><tr><th scope="col">AI Tool</th><th scope="col">Actual Prompt Used</th><th scope="col">Summary of AI Output</th><th scope="col">Problem Identified</th><th scope="col">Human Revision</th><th class="act" scope="col"><span class="sr" style="position:absolute;left:-9999px">Delete row</span></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note" id="saveNote" aria-live="polite">Changes save automatically in this browser only. Please copy the final wording into your submission file.</p>
+  </section>
+
+  <section class="card sec" id="ethics" aria-labelledby="h-eth">
+    <h2 id="h-eth">Ethical Declaration</h2>
+    <p class="statement">We confirm that all AI-generated content has been vetted, cited and co-edited by team members without violating privacy or copyright standards.</p>
+    <ul class="sigtable" id="sigs" aria-label="Signatures of the five group members"></ul>
+    <p class="note">Each member signs in the Signature box. To keep a copy, use your browser’s Print option and choose Save as PDF.</p>
+  </section>
+
+  <p style="text-align:center"><a class="btn primary back" href="#cover">Back to Storybook</a></p>
+</main>
+<!-- PAGE 6: CONCLUSION -->
+<main class="page" id="view-p6" tabindex="-1" hidden>
+  <iframe
+    src="./Page6.html"
+    title="Page 6 - Conclusion"
+    style="width:100%; height:3200px; border:0; display:block; overflow:hidden;"
+    scrolling="no"
+></iframe>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s){ return document.querySelector(s); };
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- Floating background bubbles ---------- */
+  var layer = $("#bubbles");
+  if(!reduce){
+    for(var i = 0; i < 22; i++){
+      var b = document.createElement("span");
+      var s = 8 + Math.random() * 26;
+      b.className = "bub";
+      b.style.cssText = "width:"+s+"px;height:"+s+"px;left:"+(Math.random()*100)+"%;" +
+        "animation-duration:"+(9 + Math.random()*12)+"s;animation-delay:-"+(Math.random()*18)+"s";
+      layer.appendChild(b);
+    }
+  }
+
+  /* ---------- Click burst of tiny bubbles ---------- */
+  function burst(el){
+    if(reduce) return;
+    var r = el.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
+    for(var i = 0; i < 12; i++){
+      var p = document.createElement("span"), a = (Math.PI*2*i)/12 + Math.random()*.4, d = 50 + Math.random()*70, sz = 8 + Math.random()*12;
+      p.className = "spark";
+      p.style.cssText = "left:"+cx+"px;top:"+cy+"px;width:"+sz+"px;height:"+sz+"px;--dx:"+(Math.cos(a)*d)+"px;--dy:"+(Math.sin(a)*d-30)+"px";
+      document.body.appendChild(p);
+      setTimeout(function(n){ n.remove(); }, 950, p);
+    }
+  }
+
+  /* ---------- Feature 1: clickable character dialogue ---------- */
+  var heard = { turtle:false, fish:false };
+  var chars = {
+    turtle:{ btn:$("#turtle"), say:$("#sp-bubbles") },
+    fish:{ btn:$("#fish"), say:$("#sp-finn") }
+  };
+  var hint = $("#hint"), hideTimer, seq, mood = "happy";
+  var stage = $(".stage"), bottle = $("#bottle");
+  var lines = {
+    worried:{
+      turtle:"“Finn, what is that floating over there? I have never seen it before.”",
+      fish:"“I don’t know, Bubbles... It looks strange. I have a funny feeling about it.”"
+    }
+  };
+
+  function talk(key){
+    var other = key === "turtle" ? "fish" : "turtle", c = chars[key];
+    clearTimeout(seq);
+    if(mood !== "worried"){ setWorried(); }
+    c.say.querySelector(".line").textContent = lines.worried[key];
+    var showing = c.say.classList.contains("show");
+    chars[other].say.classList.remove("show");
+    c.say.classList.toggle("show", !showing);
+    c.btn.classList.remove("hinting");
+    c.btn.classList.remove("pop"); void c.btn.offsetWidth; c.btn.classList.add("pop");
+    burst(c.btn);
+    heard[key] = true;
+    if(mood === "worried"){ /* keep the ending hint */ }
+    else if(heard.turtle && heard.fish){ hint.textContent = "You heard the whole chat! Now try Explore Blue Bay."; }
+    else { hint.textContent = "Nice! Now tap " + (key === "turtle" ? "Finn" : "Bubbles") + "."; }
+    clearTimeout(hideTimer);
+    if(!showing){ hideTimer = setTimeout(function(){ c.say.classList.remove("show"); }, 9000); }
+  }
+  Object.keys(chars).forEach(function(k){
+    chars[k].btn.addEventListener("click", function(){ talk(k); });
+    chars[k].btn.addEventListener("animationend", function(e){ if(e.target === chars[k].btn.firstElementChild) chars[k].btn.classList.remove("pop"); });
+  });
+
+  /* ---------- Ending: Bubbles and Finn notice something far away ---------- */
+  function setWorried(){
+    mood = "worried"; stage.classList.add("worried"); bottle.classList.add("seen");
+    chars.turtle.btn.classList.remove("hinting"); chars.fish.btn.classList.remove("hinting");
+    hint.textContent = "Bubbles and Finn spotted something strange. Turn the page to find out more!";
+  }
+  function notice(){
+    mood = "worried";
+    stage.classList.add("worried");
+    bottle.classList.add("seen");
+    clearTimeout(hideTimer); clearTimeout(seq);
+    chars.turtle.btn.classList.remove("hinting"); chars.fish.btn.classList.remove("hinting");
+    chars.turtle.say.querySelector(".line").textContent = lines.worried.turtle;
+    chars.fish.say.querySelector(".line").textContent = lines.worried.fish;
+    chars.fish.say.classList.remove("show");
+    chars.turtle.say.classList.add("show");
+    hint.textContent = "Bubbles and Finn spotted something strange. Turn the page to find out more!";
+    seq = setTimeout(function(){
+      chars.turtle.say.classList.remove("show");
+      chars.fish.say.classList.add("show");
+      hideTimer = setTimeout(function(){ chars.fish.say.classList.remove("show"); }, 7000);
+    }, 5000);
+  }
+  bottle.addEventListener("click", function(){ burst(bottle); notice(); });
+  var endTimer, endEl = document.querySelector(".ending");
+  if(endEl && "IntersectionObserver" in window){
+    new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        clearTimeout(endTimer);
+        if(e.isIntersecting && mood === "happy"){ endTimer = setTimeout(notice, 12000); }
+      });
+    }, { threshold: 0.8 }).observe(endEl);
+  }
+
+  /* ---------- Dialog helper (focus + Esc + backdrop) ---------- */
+  var lastFocus = null, openDlg = null;
+  function open(dlg){
+    lastFocus = document.activeElement; openDlg = dlg;
+    dlg.classList.add("open"); dlg.setAttribute("aria-hidden","false");
+    setTimeout(function(){ var f = dlg.querySelector("button"); if(f) f.focus(); }, 60);
+  }
+  function close(){
+    if(!openDlg) return;
+    openDlg.classList.remove("open"); openDlg.setAttribute("aria-hidden","true"); openDlg = null;
+    if(lastFocus) lastFocus.focus();
+  }
+  document.querySelectorAll(".overlay").forEach(function(o){
+    o.addEventListener("click", function(e){ if(e.target === o || e.target.hasAttribute("data-close")) close(); });
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape") close();
+    if(e.key === "Tab" && openDlg){
+      var f = openDlg.querySelectorAll("button"), first = f[0], last = f[f.length-1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* ---------- Feature 2: Explore Blue Bay ---------- */
+  var facts = [
+    "Colourful coral reefs are like busy underwater neighbourhoods. Many sea animals find food and safe places to hide there.",
+    "Beautiful sea plants sway gently in the water. They give sea animals cosy spots to rest and play.",
+    "Clear, sparkling water lets sunlight shine down through Blue Bay, so the whole reef can stay bright and healthy.",
+    "Lots of different sea animals live in Blue Bay. Each one has a place in this big, happy ocean family."
+  ];
+  var fact = $("#fact"), chips = document.querySelectorAll(".chip");
+  chips.forEach(function(ch){
+    ch.addEventListener("click", function(){
+      chips.forEach(function(c){ c.setAttribute("aria-pressed", "false"); });
+      ch.setAttribute("aria-pressed", "true");
+      fact.textContent = facts[+ch.dataset.i];
+      fact.classList.remove("swap"); void fact.offsetWidth; fact.classList.add("swap");
+      burst(ch);
+    });
+  });
+  $("#exploreBtn").addEventListener("click", function(e){ burst(e.currentTarget); open($("#exploreDlg")); });
+
+  /* ---------- Feature 3: Next Page ---------- */
+$("#nextBtn").addEventListener("click", function(){
+  window.location.hash = "page-3";
+});
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var KEY = "oceans-cry-ai-log-v2";
+  var TOOL = "Claude (Anthropic)";
+  var DEFAULTS = [
+    ["Claude",
+     "Make an interactive webpage for the digital storybook that introduces Bubbles, Finn and Blue Bay.",
+     "Claude created an underwater storybook page featuring two characters and their story dialogue.",
+     "The initial version mainly focused on the characters and setting but did not introduce the issue of ocean pollution.",
+     "I asked Claude to include a floating plastic bottle and plastic bag in the background as an early sign of marine pollution."],
+    ["","","","",""],
+    ["","","","",""],
+    ["","","","",""]
+  ];
+  var MEMBERS = [
+    ["POOVADASHANGARY A/P SELVAKUMARAN","MC260140138"],
+    ["MICHELLE PRIYA A/P PATRIC MICKEL","MC260340932"],
+    ["MUHAMMAD IZHWAN ABD KAHAR","MC260139690"],
+    ["NORVAANISHA BINTI MUHAMMAD SHAH NAWAZ NANTHA","MC260340941"],
+    ["SHARON IGNACIA A/P SAVERIANANDAN","MC260140308"]
+  ];
+  var LABELS = ["AI Tool","Actual Prompt Used","Summary of AI Output","Problem Identified","Human Revision"];
+  var tbody = document.querySelector("#logTable tbody"), note = document.getElementById("saveNote"), timer;
+
+  function load(){
+    try{ var s = localStorage.getItem(KEY); if(s){ var a = JSON.parse(s); if(Array.isArray(a) && a.length) return a; } }catch(e){}
+    return DEFAULTS.map(function(r){ return r.slice(); });
+  }
+  function save(){
+    var rows = Array.prototype.map.call(tbody.rows, function(tr){
+      return Array.prototype.map.call(tr.querySelectorAll("td[contenteditable]"), function(td){ return td.innerText.replace(/\n+$/,""); });
+    });
+    try{ localStorage.setItem(KEY, JSON.stringify(rows)); }catch(e){}
+  }
+  function queueSave(){ clearTimeout(timer); timer = setTimeout(save, 400); }
+window.exportLog = function(){
+  save();
+
+  var data = localStorage.getItem(KEY) || "[]";
+  var blob = new Blob([data], {type:"application/json"});
+  var url = URL.createObjectURL(blob);
+
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "oceans-cry-ai-log-backup.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+document.getElementById("importLogFile").addEventListener("change", function(e){
+  var file = e.target.files[0];
+  if(!file) return;
+
+  var reader = new FileReader();
+
+  reader.onload = function(){
+    try{
+      var rows = JSON.parse(reader.result);
+
+      if(!Array.isArray(rows) || !rows.every(function(row){
+        return Array.isArray(row) && row.length === LABELS.length &&
+          row.every(function(cell){ return typeof cell === "string"; });
+      })){
+        throw new Error("Invalid log file");
+      }
+
+      localStorage.setItem(KEY, JSON.stringify(rows));
+      render(rows);
+      alert("AI Collaboration Log imported successfully!");
+    }catch(err){
+      alert("Invalid backup file. Please select a valid AI Log backup.");
+    }
+
+    e.target.value = "";
+  };
+
+  reader.readAsText(file);
+});
+  function addRow(vals, focusIt){
+    var tr = document.createElement("tr");
+    LABELS.forEach(function(l, i){
+      var td = document.createElement("td");
+      td.contentEditable = "true"; td.setAttribute("data-label", l); td.setAttribute("spellcheck","true");
+      td.textContent = vals[i] || "";
+      td.addEventListener("input", queueSave);
+      tr.appendChild(td);
+    });
+    var act = document.createElement("td"); act.className = "act";
+    var del = document.createElement("button");
+    del.type = "button"; del.className = "del"; del.textContent = "×"; del.setAttribute("aria-label","Delete this row");
+    del.addEventListener("click", function(){ tr.remove(); save(); });
+    act.appendChild(del); tr.appendChild(act);
+    tbody.appendChild(tr);
+    if(focusIt){ tr.firstChild.focus(); tr.scrollIntoView({behavior:"smooth",block:"center"}); }
+  }
+  function render(rows){ tbody.innerHTML = ""; rows.forEach(function(r){ addRow(r, false); }); }
+  render(load());
+
+  document.getElementById("addRow").addEventListener("click", function(){ addRow(["","","","",""], true); save(); });
+  var rb = document.getElementById("resetLog"), rt;
+  rb.addEventListener("click", function(){
+    if(rb.dataset.arm !== "1"){
+      rb.dataset.arm = "1"; rb.textContent = "Click again to confirm reset";
+      rt = setTimeout(function(){ rb.dataset.arm = ""; rb.textContent = "Reset to original entries"; }, 4000);
+      return;
+    }
+    clearTimeout(rt); rb.dataset.arm = ""; rb.textContent = "Reset to original entries";
+    render(DEFAULTS); save();
+  });
+
+  /* Signature lines: full name, signature, date */
+  var ul = document.getElementById("sigs");
+  MEMBERS.forEach(function(m, i){
+    var n = i + 1, li = document.createElement("li"); li.className = "sigrow";
+    li.innerHTML =
+      '<div class="cell nm"><span class="lab">Full name</span><strong>' + n + '. ' + m[0] + '</strong><small>' + m[1] + '</small></div>' +
+      '<div class="cell"><span class="lab">Signature</span><div class="line" contenteditable="true" role="textbox" aria-label="Signature of member ' + n + '"></div></div>';
+    if(i === 0){ li.querySelector(".cell:nth-child(2) .line").innerHTML = '<img class="sigimg" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFwAAABACAYAAACX+xC4AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHdSURBVHhe7dw9TsNAEIbhKejhAhRcAa5Dx2WAQ3ACDpSWloaKkh+NFEurT7vOOjseJ/A+0ih4Fa3Xnzf+lTADAAD4L+7M7Gf/iQQedlkEvzIN3AsreibwfASe7InA8xF4sjJwn/FYGcfxZASeTAPvqW8zu9KO0EfDPLZezexCO9+YTwqfHDrWTe+qdTCR9aYrW9lDZQyt2owOpHcwrdnTKr+zjeK/JP9F6Tp66+Rm+LF6gli6sUtm7VxF7vAhOjCvSH5YWdJ/7ftLamdmt9rpKdEBe/msitJ6SNbza5irdzO7kXWdBd2QqUZNLzgi6lE7P2e6cVON8BOq9tdTfjg5tUvLcLrRUy1xufCKpazsS8fNlRvvJ5zp70M+KuHVyneE7xA0TmhT6eXbdeU7teK2v6L30ktfUNSKgBvmZvPS4rl5IfJyrCw/pKBCgxopdOid4V9m9lIJWJcRTAPWZQTTgHUZwTRgXUYwDfiTwNelgZdtkY9psTcXOLN8BbVwa20IUgu3fI+IYLXAy3Y/iSLQocC1HYNawbbaMagVbKsdg1rBttox6H4fqn+WCDwZgScj8GQEnozAk3F7v4EpcB7TJuGwkozAkxF4MgJPRuDJCDwZgScj8GT8qz3gT/oF1Wwc8WwW6moAAAAASUVORK5CYII=" alt="Signature of POOVADASHANGARY A/P SELVAKUMARAN">'; }
+    ul.appendChild(li);
+  });
+
+  })();
+</script>
+<script>
+/* ---------- PAGE 3: Trouble in Blue Bay ---------- */
+(function(){
+  "use strict";
+  var scene = document.getElementById("p3-scene");
+  if(!scene) return;
+  var $ = function(s, r){ return (r || document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var speech = $("#p3-speech"), sName = $("b", speech), sText = $(".t", speech), sMore = $(".more", speech);
+  var cap = $("#p3-cap"), water = $("#p3-water"), tip = $("#p3-tip");
+  var prev = $("#p3-prev"), next = $("#p3-next");
+  var chips = $$("#p3-chips .chip"), beats = $$(".p3-beat"), items = $$(".p3-item");
+  var chars = { bubbles: $("#p3-bubbles"), finn: $("#p3-finn"), oliver: $("#p3-oliver") };
+  var DEFAULT_TIP = "Tap the floating rubbish to find out what it is.";
+
+  /* The dialogue is read straight from the story card, so the text and the scene always match. */
+  var LINES = beats.map(function(b){
+    return $$(".p3-line", b).map(function(p){
+      return { who: p.getAttribute("data-who"), name: $("strong", p).textContent.replace(/:\s*$/, ""), text: $("span", p).textContent };
+    });
+  });
+  var step = 0, li = 0, tailTimer;
+
+  /* Little bubbles when something is tapped */
+  function burst(el){
+    if(reduce) return;
+    var r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for(var i = 0; i < 10; i++){
+      var p = document.createElement("span"), a = (Math.PI * 2 * i) / 10 + Math.random() * .4, d = 44 + Math.random() * 60, sz = 7 + Math.random() * 10;
+      p.className = "spark";
+      p.style.cssText = "left:" + cx + "px;top:" + cy + "px;width:" + sz + "px;height:" + sz + "px;--dx:" + (Math.cos(a) * d) + "px;--dy:" + (Math.sin(a) * d - 26) + "px";
+      document.body.appendChild(p);
+      setTimeout(function(n){ n.remove(); }, 950, p);
+    }
+  }
+
+  /* Point the speech bubble's tail at whoever is talking */
+  function placeTail(who){
+    var el = chars[who];
+    if(!el) return;
+    var sr = speech.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if(!sr.width || !r.width) return;
+    var cx = who === "bubbles" ? r.left + r.width * 0.78 : who === "oliver" ? r.left + r.width * 0.2 : r.left + r.width / 2;
+    var pct = (cx - sr.left) / sr.width * 100;
+    pct = Math.max(8, Math.min(92, pct));
+    speech.style.setProperty("--tail", pct + "%");
+  }
+
+  function showLine(){
+    var L = LINES[step], line = L[li];
+    speech.setAttribute("data-who", line.who);
+    sName.textContent = line.name;
+    sText.textContent = line.text;
+    sMore.textContent = L.length > 1 ? (li + 1) + " of " + L.length + " · tap to continue ▸" : "";
+    speech.classList.remove("swap"); void speech.offsetWidth; speech.classList.add("swap");
+    placeTail(line.who);
+    clearTimeout(tailTimer);
+    tailTimer = setTimeout(function(){ placeTail(line.who); }, 1100);
+  }
+
+  function setStep(n){
+    step = Math.max(0, Math.min(beats.length - 1, n));
+    li = 0;
+    scene.setAttribute("data-step", String(step + 1));
+    scene.classList.toggle("worried", step !== 3);
+    items.forEach(function(it){
+      var on = +it.getAttribute("data-min") <= step + 1;
+      it.classList.toggle("in", on);
+      it.disabled = !on;
+    });
+    beats.forEach(function(b, i){
+      b.classList.toggle("now", i === step);
+      if(i === step) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+    });
+    chips.forEach(function(c, i){ c.setAttribute("aria-pressed", i === step ? "true" : "false"); });
+    var b = beats[step];
+    cap.textContent = "Moment " + (step + 1) + " of " + beats.length + " · " + b.getAttribute("data-title");
+    water.textContent = b.getAttribute("data-label");
+    water.setAttribute("data-level", b.getAttribute("data-water"));
+    prev.disabled = step === 0;
+    next.textContent = step === beats.length - 1 ? "↺ Replay" : "Next ▶";
+    tip.textContent = DEFAULT_TIP;
+    showLine();
+  }
+
+  /* Controls */
+  prev.addEventListener("click", function(){ setStep(step - 1); });
+  next.addEventListener("click", function(){
+    if(step === beats.length - 1){ setStep(0); } else { setStep(step + 1); }
+    burst(next);
+  });
+  chips.forEach(function(c){ c.addEventListener("click", function(){ setStep(+c.getAttribute("data-i")); }); });
+  beats.forEach(function(b, i){
+    b.addEventListener("click", function(){
+      setStep(i);
+      if(window.innerWidth <= 820){ scene.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }); }
+    });
+  });
+
+  /* Speech bubble: tap for the next line */
+  speech.addEventListener("click", function(){
+    var L = LINES[step];
+    li = (li + 1) % L.length;
+    showLine();
+  });
+
+  /* Tap a character to hear their next line in this moment */
+  Object.keys(chars).forEach(function(k){
+    var el = chars[k];
+    el.addEventListener("click", function(){
+      var L = LINES[step], idx = [];
+      L.forEach(function(x, i){ if(x.who === k) idx.push(i); });
+      if(idx.length){
+        var later = idx.filter(function(i){ return i > li; });
+        li = later.length ? later[0] : idx[0];
+      } else {
+        li = (li + 1) % L.length;
+      }
+      showLine();
+      el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+      burst(el);
+    });
+    el.addEventListener("animationend", function(e){
+      if(e.target === el.firstElementChild) el.classList.remove("pop");
+    });
+  });
+
+  /* Tap the rubbish to learn what it is */
+  items.forEach(function(it){
+    it.addEventListener("click", function(){
+      tip.textContent = it.getAttribute("data-name") + ": " + it.getAttribute("data-tip");
+      it.classList.remove("wob"); void it.offsetWidth; it.classList.add("wob");
+      burst(it);
+    });
+    it.addEventListener("animationend", function(e){
+      if(e.target === it.firstElementChild) it.classList.remove("wob");
+    });
+  });
+
+  /* ---------- Dialogs (own focus handling) ---------- */
+  var openD = null, lastF = null;
+  function openDlg(d){
+    lastF = document.activeElement; openD = d;
+    d.classList.add("open"); d.setAttribute("aria-hidden", "false");
+    setTimeout(function(){ var f = $("button", d); if(f) f.focus(); }, 60);
+  }
+  function closeDlg(){
+    if(!openD) return;
+    openD.classList.remove("open"); openD.setAttribute("aria-hidden", "true"); openD = null;
+    if(lastF && lastF.focus) lastF.focus();
+  }
+  ["p3OliverDlg"].forEach(function(id){
+    var o = document.getElementById(id);
+    o.addEventListener("click", function(e){
+      if(e.target === o || e.target.hasAttribute("data-close")) closeDlg();
+    });
+  });
+  document.addEventListener("keydown", function(e){
+    if(!openD) return;
+    if(e.key === "Escape") closeDlg();
+    if(e.key === "Tab"){
+      var f = $$("button", openD), first = f[0], last = f[f.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* Ask Oliver */
+  var JELLY = '<svg viewBox="0 0 60 90" aria-hidden="true"><path d="M6 36Q6 4 30 4T54 36Q30 44 6 36Z" fill="#ff9fd0"/><circle cx="22" cy="20" r="4" fill="#fff" opacity=".6"/><g stroke="#ff9fd0" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M16 40q-6 14 0 26t-2 20"/><path d="M30 42q6 14 0 26t4 18"/><path d="M44 40q-6 14 0 24t-2 20"/></g></svg>';
+  var BAG = '<svg viewBox="0 0 300 230" aria-hidden="true"><path d="M104 74C96 20 140 2 150 66M150 66C160 4 206 18 196 74" fill="none" stroke="#5fb6e8" stroke-width="9" stroke-linecap="round"/><path d="M52 66C24 120 22 190 62 216C104 236 196 236 240 214C282 190 280 118 250 66C210 82 90 82 52 66Z" fill="#bfe6f5" fill-opacity=".8" stroke="#5fb6e8" stroke-width="8" stroke-linejoin="round"/></svg>';
+  var STUCK = '<svg viewBox="0 0 120 70" aria-hidden="true"><path d="M30 35L4 14Q0 35 4 56Z" fill="#ff7a45"/><ellipse cx="62" cy="35" rx="36" ry="21" fill="#ffa24a"/><circle cx="86" cy="29" r="6" fill="#fff"/><circle cx="88" cy="29" r="3" fill="#1d3a5c"/><ellipse cx="56" cy="35" rx="15" ry="28" fill="none" stroke="#5fb6e8" stroke-width="6"/></svg>';
+  var FACTS = [
+    '<div class="p3-compare"><figure>' + JELLY + '<figcaption>Jellyfish</figcaption></figure><figure>' + BAG + '<figcaption>Plastic bag</figcaption></figure></div><p>Some turtles like to eat jellyfish. A floating plastic bag can look almost the same, so a hungry turtle might swallow it by mistake.</p>',
+    '<div class="p3-compare"><figure>' + STUCK + '<figcaption>A fish in a ring</figcaption></figure></div><p>Bags, rings and old packaging can wrap around flippers, fins and tails. Then animals cannot swim, hide or find food.</p>',
+    '<p>Plastic makes the water dirty and cloudy. Coral reefs, sea plants and sea animals all need clean water to stay healthy. When the water is not safe, Blue Bay stops being a good home.</p>'
+  ];
+  var factBox = $("#p3Fact"), askChips = $$("#p3Chips .chip");
+  askChips.forEach(function(c){
+    c.addEventListener("click", function(){
+      askChips.forEach(function(x){ x.setAttribute("aria-pressed", "false"); });
+      c.setAttribute("aria-pressed", "true");
+      factBox.innerHTML = FACTS[+c.getAttribute("data-i")];
+      factBox.classList.remove("swap"); void factBox.offsetWidth; factBox.classList.add("swap");
+      burst(c);
+    });
+  });
+  $("#p3-ask").addEventListener("click", function(e){ burst(e.currentTarget); openDlg($("#p3OliverDlg")); });
+
+  /* Next Page: goes to Page 4 once it exists in this file, otherwise shows a friendly placeholder */
+  $("#p3-nextpage").addEventListener("click", function(e){
+    if(!document.getElementById("view-p4")){
+      e.preventDefault();
+      burst(e.currentTarget);
+      openDlg($("#p3NextDlg"));
+    }
+  });
+
+  /* Keep the speech tail right when the page is shown or resized */
+  window.addEventListener("resize", function(){ placeTail(LINES[step][li].who); });
+  window.addEventListener("hashchange", function(){
+    openD = null;
+    if(location.hash === "#page-3"){ setTimeout(function(){ placeTail(LINES[step][li].who); }, 80); }
+  });
+
+  setStep(0);
+})();
+</script>
+<script>(function(){
+  "use strict";
+  var VIEWS = {
+  "cover": "view-cover",
+  "page-2": "view-p2",
+  "page-3": "view-p3",
+  "page-4": "view-p4",
+  "page-5": "view-p5",
+  "page-6": "view-p6",
+  "ai-log": "view-log"
+};
+  function route(){
+    var h = (location.hash || "").slice(1);
+    if(!VIEWS[h]) h = "cover";
+    Object.keys(VIEWS).forEach(function(k){ document.getElementById(VIEWS[k]).hidden = (k !== h); });
+    document.querySelectorAll(".overlay.open").forEach(function(o){ o.classList.remove("open"); o.setAttribute("aria-hidden","true"); });
+    window.scrollTo(0, 0);
+    document.getElementById(VIEWS[h]).focus({ preventScroll:true });
+  }
+  window.addEventListener("hashchange", route);
+  route();
+})();</script>
+</body>
+</html>
