@@ -1444,7 +1444,37 @@ document.getElementById("importLogFile").addEventListener("change", function(e){
     if(i === 0){ li.querySelector(".cell:nth-child(2) .line").innerHTML = '<img class="sigimg" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFwAAABACAYAAACX+xC4AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHdSURBVHhe7dw9TsNAEIbhKejhAhRcAa5Dx2WAQ3ACDpSWloaKkh+NFEurT7vOOjseJ/A+0ih4Fa3Xnzf+lTADAAD4L+7M7Gf/iQQedlkEvzIN3AsreibwfASe7InA8xF4sjJwn/FYGcfxZASeTAPvqW8zu9KO0EfDPLZezexCO9+YTwqfHDrWTe+qdTCR9aYrW9lDZQyt2owOpHcwrdnTKr+zjeK/JP9F6Tp66+Rm+LF6gli6sUtm7VxF7vAhOjCvSH5YWdJ/7ftLamdmt9rpKdEBe/msitJ6SNbza5irdzO7kXWdBd2QqUZNLzgi6lE7P2e6cVON8BOq9tdTfjg5tUvLcLrRUy1xufCKpazsS8fNlRvvJ5zp70M+KuHVyneE7xA0TmhT6eXbdeU7teK2v6L30ktfUNSKgBvmZvPS4rl5IfJyrCw/pKBCgxopdOid4V9m9lIJWJcRTAPWZQTTgHUZwTRgXUYwDfiTwNelgZdtkY9psTcXOLN8BbVwa20IUgu3fI+IYLXAy3Y/iSLQocC1HYNawbbaMagVbKsdg1rBttox6H4fqn+WCDwZgScj8GQEnozAk3F7v4EpcB7TJuGwkozAkxF4MgJPRuDJCDwZgScj8GT8qz3gT/oF1Wwc8WwW6moAAAAASUVORK5CYII=" alt="Signature of POOVADASHANGARY A/P SELVAKUMARAN">'; }
     ul.appendChild(li);
   });
+/* Permanent signature saving */
+var signatureKey = "oceans-cry-signatures-v2";
 
+function saveSignatures() {
+  var data = Array.from(document.querySelectorAll("#sigs .line"))
+    .map(function(el) {
+      return el.innerHTML;
+    });
+
+  localStorage.setItem(signatureKey, JSON.stringify(data));
+}
+
+/* Restore saved signatures */
+try {
+  var savedSignatures = JSON.parse(localStorage.getItem(signatureKey));
+
+  if (Array.isArray(savedSignatures)) {
+    document.querySelectorAll("#sigs .line").forEach(function(el, i) {
+      if (typeof savedSignatures[i] === "string") {
+        el.innerHTML = savedSignatures[i];
+      }
+    });
+  }
+} catch(e) {
+  console.log("Signature restoration error:", e);
+}
+
+/* Save whenever a member edits a signature */
+document.querySelectorAll("#sigs .line").forEach(function(el) {
+  el.addEventListener("input", saveSignatures);
+});
   })();
 </script>
 <script>
